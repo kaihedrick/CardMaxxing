@@ -1,2 +1,2 @@
-# CardMaxxing
- Card Maxxing is a cloud-hosted e-commerce platform designed for selling graphics cards.
+Card Maxxing is a cloud-hosted e-commerce platform designed for selling graphics cards. Built using the ASP.NET MVC framework and hosted on Microsoft Azure, this application aims to provide users with a seamless shopping experience for high-performance graphics cards. The platform will feature a responsive design, inventory management, secure payment integration, and robust DevOps capabilities for continuous delivery and monitoring.
+
