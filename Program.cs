@@ -1,9 +1,15 @@
+using CardMaxxing.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+// Add services to the DI container
+builder.Services.AddScoped<IUserDataService, UserDAO>();
+builder.Services.AddScoped<IProductDataService, ProductDAO>();
+builder.Services.AddScoped<ICartDataService, CartDAO>();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

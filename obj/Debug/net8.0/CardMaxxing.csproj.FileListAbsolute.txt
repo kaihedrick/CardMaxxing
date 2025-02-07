@@ -1,0 +1,9 @@
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.csproj.AssemblyReference.cache
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.AssemblyInfoInputs.cache
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.AssemblyInfo.cs
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.csproj.CoreCompileInputs.cache
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.RazorAssemblyInfo.cache
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.RazorAssemblyInfo.cs
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.sourcelink.json
