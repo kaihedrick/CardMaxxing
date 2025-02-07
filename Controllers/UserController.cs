@@ -98,7 +98,7 @@ namespace CardMaxxing.Controllers
             string? userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            List<OrderModel> orders = _orderService.getOrdersByUserId(userId);
+            List<OrderModel> orders = _orderService.getOrdersByUserID(userId);
             return View(orders);
         }
 
