@@ -92,7 +92,7 @@ namespace CardMaxxing.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             // Redirect to Dashboard after login
-            return RedirectToAction("Dashboard", "Home");
+            return RedirectToAction("Index", "Home");
         }
 
         // GET: User/Dashboard - User Dashboard (After Login)
@@ -182,11 +182,19 @@ namespace CardMaxxing.Controllers
         }
 
         // GET: User/Logout - Logout user
-        public IActionResult Logout()
+        // Ensure logout action signs  user out from cookie authentication system 
+        public async Task<IActionResult> Logout()
         {
+            // Clear session data
             HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+
+            // Sign out using cookie authentication
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Redirect to Home (or Login) after logout
+            return RedirectToAction("Index", "Home");
         }
+
 
         private string HashPassword(string password)
         {

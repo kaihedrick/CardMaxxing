@@ -18,5 +18,37 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: #121212; /* Dark Background */
+    color: #ffffff; /* Light Text for Readability */
+}
+
+.card {
+    background-color: #1e1e1e; /* Dark Card Background */
+    color: white; /* Light Text */
+    border: 1px solid #333; /* Slight border for definition */
+}
+
+.btn-dark {
+    background-color: #333 !important;
+    border-color: #444;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: black;
+    font-weight: bold;
+}
+
+.btn-outline-light {
+    border-color: white;
+    color: white;
+}
+
+.text-muted {
+    color: #bbb !important;
+}
+
+.bg-light {
+    background-color: #222 !important;
 }

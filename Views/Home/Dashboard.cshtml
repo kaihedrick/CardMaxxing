@@ -3,13 +3,50 @@
     var username = Context.Session.GetString("Username"); // Get logged-in username
 }
 
-<h2>Welcome, @username!</h2>
+<div class="container mt-5">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-light text-center py-5 rounded mb-5">
+        <h1 class="display-4">Welcome, @username! 😊</h1>
+        <p class="lead">This is your personal dashboard. Manage your account, view orders, and explore products seamlessly.</p>
+        <hr class="my-4">
+        <p>Use the options below to navigate your account.</p>
+    </div>
 
-<p>This is your personal dashboard. Here you can manage your account, view orders, and explore products.</p>
+    <!-- Dashboard Options -->
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">📜 Order History</h5>
+                    <p class="card-text">View your past purchases and track your orders.</p>
+                    <a asp-controller="User" asp-action="OrderHistory" class="btn btn-primary">View Orders</a>
+                </div>
+            </div>
+        </div>
 
-<ul>
-    <li><a asp-controller="User" asp-action="OrderHistory">View Order History</a></li>
-    <li><a asp-controller="User" asp-action="Edit" asp-route-id="@Context.Session.GetString("UserId")">Edit Profile</a></li>
-    <li><a asp-controller="Home" asp-action="Index">Back to Home</a></li>
-    <li><a asp-controller="User" asp-action="Logout">Logout</a></li>
-</ul>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">👤 Edit Profile</h5>
+                    <p class="card-text">Update your personal information and preferences.</p>
+                    <a asp-controller="User" asp-action="Edit" asp-route-id="@Context.Session.GetString("UserId")" class="btn btn-warning">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">🏠 Back to Home</h5>
+                    <p class="card-text">Return to the main homepage and continue browsing.</p>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="text-center mt-4">
+        <a asp-controller="User" asp-action="Logout" class="btn btn-danger btn-lg">🚪 Logout</a>
+    </div>
+</div>
