@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    var username = Context.Session.GetString("Username"); // Get logged-in username
+}
+
+<h2>Welcome, @username!</h2>
+
+<p>This is your personal dashboard. Here you can manage your account, view orders, and explore products.</p>
+
+<ul>
+    <li><a asp-controller="User" asp-action="OrderHistory">View Order History</a></li>
+    <li><a asp-controller="User" asp-action="Edit" asp-route-id="@Context.Session.GetString("UserId")">Edit Profile</a></li>
+    <li><a asp-controller="Home" asp-action="Index">Back to Home</a></li>
+    <li><a asp-controller="User" asp-action="Logout">Logout</a></li>
+</ul>

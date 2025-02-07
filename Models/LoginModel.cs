@@ -1,9 +1,17 @@
-﻿namespace CardMaxxing.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CardMaxxing.Models
 {
     public class LoginModel
     {
         // Properties
+        [Required]
+        [Display(Name = "Username")]
         public string Username { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
         public string Password { get; set; }
 
         // Default Constructor

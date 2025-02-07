@@ -1,0 +1,52 @@
+﻿@model CardMaxxing.Models.LoginModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card shadow-lg p-4 rounded" style="max-width: 400px; width: 100%;">
+        <div class="card-body">
+            <h2 class="text-center mb-4">Login</h2>
+
+            <form asp-action="Login" method="post">
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input asp-for="Username" class="form-control rounded-pill" placeholder="Enter your username" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input asp-for="Password" type="password" class="form-control rounded-pill" placeholder="Enter your password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <p class="mb-0">Invalid username or password. Please try again.</p>
+                    </div>
+                }
+            </form>
+
+            <p class="text-center mt-3">
+                Don't have an account? <a asp-action="Register" class="text-primary fw-bold">Register here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,76 @@
+﻿@model CardMaxxing.Models.UserModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="card shadow-lg p-4 rounded" style="max-width: 500px; width: 100%;">
+        <div class="card-body">
+            <h2 class="text-center mb-4">Register</h2>
+
+            <form asp-action="Register" method="post">
+                <div class="mb-3">
+                    <label asp-for="FirstName" class="form-label">
+                        <i class="fas fa-user-tag"></i> First Name
+                    </label>
+                    <input asp-for="FirstName" class="form-control rounded-pill" placeholder="Enter your first name" />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="LastName" class="form-label">
+                        <i class="fas fa-user-tag"></i> Last Name
+                    </label>
+                    <input asp-for="LastName" class="form-control rounded-pill" placeholder="Enter your last name" />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label">
+                        <i class="fas fa-envelope"></i> Email
+                    </label>
+                    <input asp-for="Email" type="email" class="form-control rounded-pill" placeholder="Enter your email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input asp-for="Username" class="form-control rounded-pill" placeholder="Choose a username" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input asp-for="Password" type="password" class="form-control rounded-pill" placeholder="Enter your password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <p class="mb-0">There was an error creating your account. Please try again.</p>
+                    </div>
+                }
+            </form>
+
+            <p class="text-center mt-3">
+                Already have an account? <a asp-action="Login" class="text-primary fw-bold">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

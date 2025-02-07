@@ -1,4 +1,5 @@
 using CardMaxxing.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -20,6 +21,20 @@ namespace CardMaxxing.Controllers
 
         public IActionResult Privacy()
         {
+            return View();
+        }
+
+        // Logged In User Home Dashboard view
+        [Authorize] // Ensures only logged-in users can access the dashboard
+        public IActionResult Dashboard()
+        {
+            string? userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "User"); // Redirect to login if not authenticated
+            }
+
             return View();
         }
 

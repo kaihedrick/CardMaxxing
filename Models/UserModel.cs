@@ -1,14 +1,33 @@
-﻿namespace CardMaxxing.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CardMaxxing.Models
 {
     public class UserModel
     {
         //properties
-        public string ID {  get; set; }
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public string Email { get; set; }
+        public string ID { get; set; } // Auto-generated unique ID
+
+        [Required]
+        [Display(Name = "First Name")]
         public string FirstName { get; set; }
+
+        [Required]
+        [Display(Name = "Last Name")]
         public string LastName { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; }
+
+        [Required]
+        [Display(Name = "Username")]
+        public string Username { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; }
         public bool? Active { get; set; }
 
 

@@ -3,6 +3,9 @@ using CardMaxxing.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace CardMaxxing.Controllers
 {
@@ -59,7 +62,7 @@ namespace CardMaxxing.Controllers
         // POST: User/Login - Authenticate user
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Login(LoginModel credentials)
+        public async Task<IActionResult> Login(LoginModel credentials)
         {
             if (!ModelState.IsValid) return View(credentials);
 
@@ -72,10 +75,24 @@ namespace CardMaxxing.Controllers
                 return View(credentials);
             }
 
+            // Store user session data (custom session handling)
             HttpContext.Session.SetString("UserId", user.ID);
             HttpContext.Session.SetString("Username", user.Username);
 
-            return RedirectToAction("Dashboard");
+            // Sign in the user using cookie authentication
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.ID)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            // Redirect to Dashboard after login
+            return RedirectToAction("Dashboard", "Home");
         }
 
         // GET: User/Dashboard - User Dashboard (After Login)
