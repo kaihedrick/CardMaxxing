@@ -1,13 +1,20 @@
-﻿using CardMaxxing.Services;
-using Microsoft.AspNetCore.Authentication.Cookies; // Add this import
+﻿using System.Data; // Add this import
+using Dapper;
+using CardMaxxing.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using MySql.Data.MySqlClient;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add MySQL connection for Dapper
+builder.Services.AddScoped<IDbConnection>(sp =>
+    new MySqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Register Dependency Injection Services
-builder.Services.AddScoped<IUserDataService, UserDAO>();
-builder.Services.AddScoped<IProductDataService, ProductDAO>();
+builder.Services.AddScoped<IUserDataService, UserDataService>();
+builder.Services.AddScoped<IProductDataService, ProductDataService>();
 builder.Services.AddScoped<ICartDataService, CartDAO>();
-builder.Services.AddScoped<IOrderDataService, OrderDAO>();
+builder.Services.AddScoped<IOrderDataService, OrderDataService>();
 
 // Add session services
 builder.Services.AddDistributedMemoryCache();

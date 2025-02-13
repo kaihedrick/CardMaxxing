@@ -1,13 +1,15 @@
 ﻿using CardMaxxing.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CardMaxxing.Services
 {
     public interface IOrderDataService
     {
-        public bool createOrder(OrderModel order);
-        public bool deleteOrder(string id);
-        public OrderModel getOrderByID(string id);
-        public List<OrderModel> getOrdersByUserID(string userId);
+        Task<bool> CreateOrderAsync(OrderModel order);
+        Task<bool> DeleteOrderAsync(string id);
+        Task<OrderModel> GetOrderByIDAsync(string id);
+        Task<List<OrderModel>> GetOrdersByUserIDAsync(string userId);
+        Task<List<OrderItemsModel>> GetOrderItemsByOrderIDAsync(string orderId);
     }
 }

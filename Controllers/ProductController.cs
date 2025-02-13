@@ -1,174 +1,126 @@
 ﻿using CardMaxxing.Models;
 using CardMaxxing.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CardMaxxing.Controllers
 {
+    [Authorize]
     public class ProductController : Controller
     {
         private readonly IProductDataService _productService;
-        private readonly ICartDataService _cartService; // ✅ Declare _cartService
+
         public ProductController(IProductDataService productService)
         {
             _productService = productService;
         }
 
-        // GET: Product/Index - Show all products
-        public IActionResult Index()
+        // Show all products
+        public async Task<IActionResult> Index()
         {
-            var products = _productService.getAllProducts();
+            var products = await _productService.GetAllProductsAsync();
             return View(products);
         }
 
-        // GET: Product/Details/{id} - Show details for a single product
-        public IActionResult Details(string id)
+        // Show product details
+        public async Task<IActionResult> Details(string id)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                return RedirectToAction("Index");
-            }
-
-            var product = _productService.getProductByID(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
+            var product = await _productService.GetProductByIDAsync(id);
+            if (product == null) return NotFound();
             return View(product);
         }
 
-        // GET: Product/Create - Show create product form
+        // Show create product form (Admin only)
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Product/Create - Add a new product
+        // Handle product creation (Admin only)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(ProductModel product)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create(ProductModel product)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(product);
-            }
+            if (!ModelState.IsValid) return View(product);
 
-            bool exists = _productService.checkProductDuplicate(product.Name);
+            bool exists = await _productService.CheckProductDuplicateAsync(product.Name);
             if (exists)
             {
                 ModelState.AddModelError("Name", "Product with this name already exists.");
                 return View(product);
             }
 
-            bool result = _productService.createProduct(product);
-            if (result)
+            bool created = await _productService.CreateProductAsync(product);
+            if (!created)
             {
-                return RedirectToAction("Index");
-            }
-
-            ModelState.AddModelError("", "An error occurred while creating the product.");
-            return View(product);
-        }
-
-        // GET: Product/Edit/{id} - Show edit product form
-        public IActionResult Edit(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                return RedirectToAction("Index");
-            }
-
-            var product = _productService.getProductByID(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            return View(product);
-        }
-
-        // POST: Product/Edit/{id} - Update product
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(ProductModel product)
-        {
-            if (!ModelState.IsValid)
-            {
+                ModelState.AddModelError("", "Error creating product.");
                 return View(product);
             }
 
-            var existingProduct = _productService.getProductByID(product.ID);
-            if (existingProduct == null)
-            {
-                return NotFound();
-            }
-
-            bool result = _productService.editProduct(product);
-            if (result)
-            {
-                return RedirectToAction("Index");
-            }
-
-            ModelState.AddModelError("", "An error occurred while editing the product.");
-            return View(product);
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: Product/Delete/{id} - Show delete confirmation page
-        public IActionResult Delete(string id)
+        // Show edit form (Admin only)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(string id)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                return RedirectToAction("Index");
-            }
-
-            var product = _productService.getProductByID(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
+            var product = await _productService.GetProductByIDAsync(id);
+            if (product == null) return NotFound();
             return View(product);
         }
 
-        // POST: Product/Delete/{id} - Confirm deletion
-        [HttpPost, ActionName("Delete")]
+        // Handle product editing (Admin only)
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(string id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Edit(string id, ProductModel product)
         {
-            var product = _productService.getProductByID(id);
-            if (product == null)
+            if (!ModelState.IsValid) return View(product);
+
+            var existingProduct = await _productService.GetProductByIDAsync(id);
+            if (existingProduct == null) return NotFound();
+
+            product.ID = id;
+            bool updated = await _productService.EditProductAsync(product);
+            if (!updated)
             {
-                return NotFound();
+                ModelState.AddModelError("", "Error updating product.");
+                return View(product);
             }
 
-            bool result = _productService.deleteProduct(id);
-            if (result)
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Handle product deletion (Admin only)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var product = await _productService.GetProductByIDAsync(id);
+            if (product == null) return NotFound();
+
+            bool deleted = await _productService.DeleteProductAsync(id);
+            if (!deleted)
             {
-                return RedirectToAction("Index");
+                ModelState.AddModelError("", "Error deleting product.");
+                return View(product);
             }
 
-            ModelState.AddModelError("", "An error occurred while deleting the product.");
-            return View(product);
+            return RedirectToAction(nameof(Index));
         }
-        public IActionResult Index(string searchTerm = "", string category = "")
+
+        // Search products by name or manufacturer
+        public async Task<IActionResult> Search(string searchTerm)
         {
-            var products = string.IsNullOrEmpty(searchTerm) && string.IsNullOrEmpty(category)
-                ? _productService.getAllProducts()
-                : _productService.searchProducts(searchTerm, category);
-
-            return View(products);
+            var results = await _productService.SearchProductsAsync(searchTerm);
+            if (results.Count == 0)
+            {
+                ViewBag.Message = "No products found.";
+            }
+            return View("Index", results);
         }
-        public IActionResult AddToCart(string productId)
-        {
-            string userId = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login", "User");
-
-            bool result = _cartService.addToCart(userId, productId);
-            if (result) return RedirectToAction("Cart", "Order");
-
-            ModelState.AddModelError("", "Could not add item to cart.");
-            return RedirectToAction("Index");
-        }
-
     }
 }

@@ -1,11 +1,12 @@
 ﻿using CardMaxxing.Models;
 using CardMaxxing.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CardMaxxing.Controllers
 {
@@ -29,21 +30,20 @@ namespace CardMaxxing.Controllers
         // POST: User/Register - Register a new user
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Register(UserModel user)
+        public async Task<IActionResult> Register(UserModel user)
         {
             if (!ModelState.IsValid) return View(user);
 
-            // Hash password
-            user.Password = HashPassword(user.Password ?? string.Empty);
+            user.Role = "User"; // Ensure new users are assigned the default 'User' role
 
-            bool exists = _userService.checkEmailDuplicate(user.Email);
+            bool exists = await _userService.CheckEmailDuplicateAsync(user.Email);
             if (exists)
             {
                 ModelState.AddModelError("Email", "Email is already registered.");
                 return View(user);
             }
 
-            bool result = _userService.createUser(user);
+            bool result = await _userService.CreateUserAsync(user); // Hashing is handled inside this method
             if (result)
             {
                 return RedirectToAction("Login");
@@ -53,21 +53,22 @@ namespace CardMaxxing.Controllers
             return View(user);
         }
 
+
         // GET: User/Login - Show login form
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: User/Login - Authenticate user
+        // POST: User/Login - Authenticate user (Using Claims & Cookies)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginModel credentials)
         {
             if (!ModelState.IsValid) return View(credentials);
 
-            bool authenticated = _userService.verifyAccount(credentials.Username, credentials.Password);
-            UserModel? user = _userService.getUserByUsername(credentials.Username);
+            bool authenticated = await _userService.VerifyAccountAsync(credentials.Username, credentials.Password);
+            UserModel user = await _userService.GetUserByUsernameAsync(credentials.Username);
 
             if (!authenticated || user == null)
             {
@@ -75,130 +76,68 @@ namespace CardMaxxing.Controllers
                 return View(credentials);
             }
 
-            // Store user session data (custom session handling)
-            HttpContext.Session.SetString("UserId", user.ID);
-            HttpContext.Session.SetString("Username", user.Username);
+            // Retrieve user role from database
+            string role = user.Role ?? "User"; // Fallback to 'User' if Role is null
 
-            // Sign in the user using cookie authentication
+            // Create user claims for authentication
             var claims = new List<Claim>
             {
+                new Claim(ClaimTypes.NameIdentifier, user.ID),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.ID)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, role) // Store actual role from DB
             };
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties { IsPersistent = true };
 
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties
+            );
 
-            // Redirect to Dashboard after login
             return RedirectToAction("Index", "Home");
         }
 
-        // GET: User/Dashboard - User Dashboard (After Login)
+        // GET: User/Dashboard - Protected User Dashboard
         [Authorize]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            string? userId = HttpContext.Session.GetString("UserId");
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            var user = _userService.getUserByID(userId);
+            var user = await _userService.GetUserByIDAsync(userId);
             if (user == null) return RedirectToAction("Login");
 
             return View(user);
         }
 
-        // GET: User/OrderHistory - View past orders
+        // GET: User/OrderHistory - View past orders (Protected)
         [Authorize]
-        public IActionResult OrderHistory()
+        public async Task<IActionResult> OrderHistory()
         {
-            string? userId = HttpContext.Session.GetString("UserId");
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            List<OrderModel> orders = _orderService.getOrdersByUserID(userId);
+            List<OrderModel> orders = await _orderService.GetOrdersByUserIDAsync(userId);
             return View(orders);
         }
 
-        // GET: User/Edit/{id} - Show edit user form
-        [Authorize]
-        public IActionResult Edit(string id)
+        // GET: Admin/Dashboard - Admin-only dashboard
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminDashboard()
         {
-            if (string.IsNullOrEmpty(id)) return RedirectToAction("Dashboard");
-
-            var user = _userService.getUserByID(id);
-            if (user == null) return NotFound();
-
-            return View(user);
+            return View();
         }
 
-        // POST: User/Edit/{id} - Update user details
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(UserModel user)
-        {
-            if (!ModelState.IsValid) return View(user);
-
-            var existingUser = _userService.getUserByID(user.ID);
-            if (existingUser == null) return NotFound();
-
-            user.Password = HashPassword(user.Password ?? string.Empty);
-            bool result = _userService.editUser(user);
-
-            if (result) return RedirectToAction("Dashboard");
-
-            ModelState.AddModelError("", "Error updating account.");
-            return View(user);
-        }
-
-        // GET: User/Delete/{id} - Show delete confirmation page
-        [Authorize]
-        public IActionResult Delete(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return RedirectToAction("Dashboard");
-
-            var user = _userService.getUserByID(id);
-            if (user == null) return NotFound();
-
-            return View(user);
-        }
-
-        // POST: User/Delete/{id} - Confirm user deletion
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(string id)
-        {
-            var user = _userService.getUserByID(id);
-            if (user == null) return NotFound();
-
-            bool result = _userService.deleteUser(id);
-            if (result)
-            {
-                HttpContext.Session.Clear();
-                return RedirectToAction("Register");
-            }
-
-            ModelState.AddModelError("", "Error deleting account.");
-            return View(user);
-        }
-
-        // GET: User/Logout - Logout user
-        // Ensure logout action signs  user out from cookie authentication system 
+        // GET: User/Logout - Logout User
         public async Task<IActionResult> Logout()
         {
-            // Clear session data
-            HttpContext.Session.Clear();
-
-            // Sign out using cookie authentication
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            // Redirect to Home (or Login) after logout
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login");
         }
 
 
-        private string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password);
-        }
     }
 }

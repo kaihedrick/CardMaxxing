@@ -1,58 +1,35 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CardMaxxing.Models
 {
     public class UserModel
     {
-        //properties
-        public string ID { get; set; } // Auto-generated unique ID
+        public string ID { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        [Display(Name = "First Name")]
+        [Required, StringLength(50, MinimumLength = 2)]
         public string FirstName { get; set; }
 
-        [Required]
-        [Display(Name = "Last Name")]
+        [Required, StringLength(50, MinimumLength = 2)]
         public string LastName { get; set; }
 
-        [Required]
-        [EmailAddress]
-        [Display(Name = "Email")]
+        [Required, EmailAddress]
         public string Email { get; set; }
 
-        [Required]
-        [Display(Name = "Username")]
+        [Required, StringLength(20, MinimumLength = 3)]
         public string Username { get; set; }
 
-        [Required]
-        [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Required, DataType(DataType.Password)]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters.")]
         public string Password { get; set; }
-        public bool? Active { get; set; }
+        public bool Active { get; set; } = false;
+        public string Role { get; set; }
 
-
-
-        //default constructor
+        // Constructor to enforce default values, don't want a user being able to set their role as admin
         public UserModel()
         {
-            this.ID = "";
-            this.Username = string.Empty;
-            this.Password = string.Empty;
-            this.Email = string.Empty;
-            this.FirstName = string.Empty;
-            this.LastName = string.Empty;
-            this.Active = false;
-        }
-        //parameterized constructor
-        public UserModel(string id, string username, string password, string email, string firstName, string lastName, bool active)
-        {
-            ID = id;
-            Username = username;
-            Password = password;
-            Email = email;
-            FirstName = firstName;
-            LastName = lastName;
-            Active = active;
+            Active = false;
+            Role = "User";
         }
     }
 }

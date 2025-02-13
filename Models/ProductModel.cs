@@ -2,8 +2,7 @@
 {
     public class ProductModel
     {
-        // Properties
-        public string ID { get; set; }
+        public string ID { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; }
         public string Manufacturer { get; set; }
         public string Description { get; set; }
@@ -11,19 +10,8 @@
         public int Quantity { get; set; }
         public string ImageUrl { get; set; }
 
-        // Default Constructor
-        public ProductModel()
-        {
-            this.ID = "";
-            this.Name = string.Empty;
-            this.Manufacturer = string.Empty;
-            this.Description = string.Empty;
-            this.Price = 0.0m;
-            this.Quantity = 0;
-            this.ImageUrl = string.Empty;
-        }
+        public ProductModel() { }
 
-        // Parameterized Constructor
         public ProductModel(string id, string name, string manufacturer, string description, decimal price, int quantity, string imageUrl)
         {
             ID = id;

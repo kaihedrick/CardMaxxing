@@ -1,16 +1,19 @@
 ﻿using CardMaxxing.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CardMaxxing.Services
 {
     public interface IUserDataService
     {
-        public bool createUser(UserModel user);
-        public bool editUser(UserModel user);
-        public bool deleteUser(string id);
-        public bool verifyAccount(string uname, string password);
-        public UserModel getUserByUsername(string username);
-        public UserModel getUserByID(string id);
-        string getHashedPassword(string username);
-        bool checkEmailDuplicate(string email);
+        Task<bool> CreateUserAsync(UserModel user);
+        Task<bool> EditUserAsync(UserModel user);
+        Task<bool> DeleteUserAsync(string id);
+        Task<bool> VerifyAccountAsync(string username, string password);
+        Task<UserModel> GetUserByUsernameAsync(string username);
+        Task<UserModel> GetUserByIDAsync(string id);
+        Task<string> GetHashedPasswordAsync(string username);
+        Task<bool> CheckEmailDuplicateAsync(string email);
+        Task<string> GetUserRoleAsync(string username); 
     }
 }

@@ -1,23 +1,22 @@
-﻿namespace CardMaxxing.Models
+﻿using System;
+
+namespace CardMaxxing.Models
 {
     public class OrderModel
     {
-        // Properties
-        public string ID { get; set; }
+        public string ID { get; set; } = Guid.NewGuid().ToString();
         public string UserID { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string Status { get; set; } = "Pending"; // Optional: Order status
 
-        // Default constructor
-        public OrderModel()
-        {
-        }
+        public OrderModel() { }
 
-        // Parameterized constructor
-        public OrderModel(string id, string userId, DateTime createdAt)
+        public OrderModel(string id, string userId, DateTime createdAt, string status = "Pending")
         {
             ID = id;
             UserID = userId;
             CreatedAt = createdAt;
+            Status = status;
         }
     }
 }
