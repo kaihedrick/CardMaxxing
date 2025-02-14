@@ -7,16 +7,14 @@ namespace CardMaxxing.Models
         public string ID { get; set; } = Guid.NewGuid().ToString();
         public string UserID { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; } = "Pending"; // Optional: Order status
 
         public OrderModel() { }
 
-        public OrderModel(string id, string userId, DateTime createdAt, string status = "Pending")
+        public OrderModel(string id, string userId, DateTime createdAt)
         {
             ID = id;
             UserID = userId;
             CreatedAt = createdAt;
-            Status = status;
         }
     }
 }

@@ -19,10 +19,16 @@ namespace CardMaxxing.Services
 
         public async Task<bool> CreateOrderAsync(OrderModel order)
         {
-            string query = @"INSERT INTO orders (ID, UserID, CreatedAt, Status)
-                             VALUES (@ID, @UserID, @CreatedAt, @Status);";
+            string query = @"INSERT INTO orders (ID, UserID, CreatedAt)
+                             VALUES (@ID, @UserID, @CreatedAt);";
 
-            int rowsAffected = await _db.ExecuteAsync(query, order);
+            int rowsAffected = await _db.ExecuteAsync(query, new
+            {
+                order.ID,
+                order.UserID,
+                order.CreatedAt
+            });
+
             return rowsAffected > 0;
         }
 
@@ -50,6 +56,7 @@ namespace CardMaxxing.Services
             string query = "SELECT * FROM order_items WHERE OrderID = @OrderID;";
             return (await _db.QueryAsync<OrderItemsModel>(query, new { OrderID = orderId })).AsList();
         }
+
         public async Task<List<OrderModel>> GetAllOrdersAsync()
         {
             string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";

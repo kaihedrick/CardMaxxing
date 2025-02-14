@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\risma\\source\\repos\\CST323\\CardMaxxing\\CardMaxxing.csproj": {}
+    "C:\\Users\\kaihe\\OneDrive\\Documents\\CST-323\\CardMaxxing\\CardMaxxing\\CardMaxxing.csproj": {}
   },
   "projects": {
-    "C:\\Users\\risma\\source\\repos\\CST323\\CardMaxxing\\CardMaxxing.csproj": {
+    "C:\\Users\\kaihe\\OneDrive\\Documents\\CST-323\\CardMaxxing\\CardMaxxing\\CardMaxxing.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\risma\\source\\repos\\CST323\\CardMaxxing\\CardMaxxing.csproj",
+        "projectUniqueName": "C:\\Users\\kaihe\\OneDrive\\Documents\\CST-323\\CardMaxxing\\CardMaxxing\\CardMaxxing.csproj",
         "projectName": "CardMaxxing",
-        "projectPath": "C:\\Users\\risma\\source\\repos\\CST323\\CardMaxxing\\CardMaxxing.csproj",
-        "packagesPath": "C:\\Users\\risma\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\risma\\source\\repos\\CST323\\CardMaxxing\\obj\\",
+        "projectPath": "C:\\Users\\kaihe\\OneDrive\\Documents\\CST-323\\CardMaxxing\\CardMaxxing\\CardMaxxing.csproj",
+        "packagesPath": "C:\\Users\\kaihe\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\kaihe\\OneDrive\\Documents\\CST-323\\CardMaxxing\\CardMaxxing\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\risma\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\kaihe\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -86,7 +82,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.403/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.404/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
