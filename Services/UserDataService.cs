@@ -99,5 +99,18 @@ namespace CardMaxxing.Services
                 return false;
             }
         }
+        // ✅ Implementation for retrieving all users
+        public async Task<List<UserModel>> GetAllUsersAsync()
+        {
+            string query = "SELECT * FROM users;";
+            return (await _db.QueryAsync<UserModel>(query)).AsList();
+        }
+        public async Task<bool> UpdateUserRoleAsync(string userId, string newRole)
+        {
+            string query = "UPDATE users SET Role = @Role WHERE ID = @UserID;";
+            int rowsAffected = await _db.ExecuteAsync(query, new { UserID = userId, Role = newRole });
+            return rowsAffected > 0;
+        }
+
     }
 }

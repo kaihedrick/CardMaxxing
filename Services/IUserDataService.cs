@@ -14,6 +14,8 @@ namespace CardMaxxing.Services
         Task<UserModel> GetUserByIDAsync(string id);
         Task<string> GetHashedPasswordAsync(string username);
         Task<bool> CheckEmailDuplicateAsync(string email);
-        Task<string> GetUserRoleAsync(string username); 
+        Task<string> GetUserRoleAsync(string username);
+        Task<bool> UpdateUserRoleAsync(string userId, string newRole);
+        Task<List<UserModel>> GetAllUsersAsync();
     }
 }

@@ -11,5 +11,6 @@ namespace CardMaxxing.Services
         Task<OrderModel> GetOrderByIDAsync(string id);
         Task<List<OrderModel>> GetOrdersByUserIDAsync(string userId);
         Task<List<OrderItemsModel>> GetOrderItemsByOrderIDAsync(string orderId);
+        Task<List<OrderModel>> GetAllOrdersAsync();
     }
 }

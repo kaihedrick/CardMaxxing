@@ -13,7 +13,7 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 // Register Dependency Injection Services
 builder.Services.AddScoped<IUserDataService, UserDataService>();
 builder.Services.AddScoped<IProductDataService, ProductDataService>();
-builder.Services.AddScoped<ICartDataService, CartDAO>();
+builder.Services.AddScoped<ICartDataService, CartDataService>();
 builder.Services.AddScoped<IOrderDataService, OrderDataService>();
 
 // Add session services

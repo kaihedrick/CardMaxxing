@@ -50,5 +50,10 @@ namespace CardMaxxing.Services
             string query = "SELECT * FROM order_items WHERE OrderID = @OrderID;";
             return (await _db.QueryAsync<OrderItemsModel>(query, new { OrderID = orderId })).AsList();
         }
+        public async Task<List<OrderModel>> GetAllOrdersAsync()
+        {
+            string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";
+            return (await _db.QueryAsync<OrderModel>(query)).AsList();
+        }
     }
 }
