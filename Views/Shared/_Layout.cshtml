@@ -23,13 +23,54 @@
                         <li class="nav-item">
                             <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Dashboard">
-                                    <i class="fas fa-user"></i> Dashboard
-                                </a>
-                            </li>
+                            if (User.IsInRole("Admin"))
+                            {
+                                <!-- Admin Navbar -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="Admin" asp-action="AdminDashboard">
+                                        <i class="fas fa-user-shield"></i> Admin Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="Admin" asp-action="AllOrders">
+                                        <i class="fas fa-box-open"></i> Manage Orders
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="Admin" asp-action="ManageUsers">
+                                        <i class="fas fa-users-cog"></i> Manage Users
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="Product" asp-action="CreateProduct">
+                                        <i class="fas fa-plus-square"></i> Add Product
+                                    </a>
+                                </li>
+                            }
+                            else if (User.IsInRole("User"))
+                            {
+                                <!-- Regular User Navbar -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Dashboard">
+                                        <i class="fas fa-user"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="OrderHistory">
+                                        <i class="fas fa-shopping-cart"></i> My Orders
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="Edit">
+                                        <i class="fas fa-user-edit"></i> Edit Profile
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- Logout (Visible to both Admin & User) -->
                             <li class="nav-item">
                                 <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="Logout">
                                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -38,6 +79,7 @@
                         }
                         else
                         {
+                            <!-- Guest Navbar -->
                             <li class="nav-item">
                                 <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="Register">
                                     <i class="fas fa-user-plus"></i> Register
@@ -54,6 +96,7 @@
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -65,6 +108,7 @@
             &copy; 2025 - CardMaxxing - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
