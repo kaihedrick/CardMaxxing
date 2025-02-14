@@ -1,0 +1,45 @@
+﻿@model IEnumerable<CardMaxxing.Models.OrderItemsModel>
+
+@{
+    ViewData["Title"] = "Shopping Cart";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center">Shopping Cart</h2>
+
+    @if (!Model.Any())
+    {
+        <p class="text-center">Your cart is empty.</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                var product = item.Product ?? new CardMaxxing.Models.ProductModel(); // Prevent null reference
+
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm rounded p-3 text-center">
+                        <img src="@product.ImageUrl" class="img-fluid rounded" alt="@product.Name"
+                             style="max-height: 150px; object-fit: contain;">
+
+                        <h5 class="fw-bold mt-3">@product.Name</h5>
+                        <p class="text-muted">$@(product.Price > 0 ? product.Price.ToString("0.00") : "0.00")</p>
+                        <p>Quantity: @item.Quantity</p>
+
+                        <div class="d-flex justify-content-between">
+                            <form asp-action="RemoveFromCart" asp-controller="User" method="post">
+                                <input type="hidden" name="productId" value="@item.ProductID" />
+                                <button type="submit" class="btn btn-danger">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="text-center mt-4">
+        <a href="@Url.Action("Checkout", "User")" class="btn btn-primary">Checkout</a>
+    </div>
+</div>

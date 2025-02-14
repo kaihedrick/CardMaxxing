@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CardMaxxing")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b541f72dc20afe88f04398c44fc0ec75b87bee8b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6fbea9898e8b218ed089406cd77e86b6375be40e")]
 [assembly: System.Reflection.AssemblyProductAttribute("CardMaxxing")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CardMaxxing")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

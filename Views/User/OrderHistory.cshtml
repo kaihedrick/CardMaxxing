@@ -1,1 +1,49 @@
-﻿
+﻿@model List<(CardMaxxing.Models.OrderModel, List<CardMaxxing.Models.OrderItemsModel>, decimal)>
+
+@{
+    ViewData["Title"] = "Order History";
+}
+
+<h2 class="text-center">Order History</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center" role="alert">
+        You have no orders yet.
+    </div>
+}
+else
+{
+    <div class="container">
+        <div class="row justify-content-center">
+            @foreach (var (order, items, total) in Model)
+            {
+                <div class="col-md-8 mb-4">
+                    <div class="card shadow-lg rounded-4">
+                        <div class="card-header bg-dark text-white">
+                            <h5>Order ID: @order.ID</h5>
+                            <p class="mb-0">Placed on: @order.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</p>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                @foreach (var item in items)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Product ID:</strong> @item.ProductID
+                                            <br />
+                                            <small>Quantity: @item.Quantity</small>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="card-footer text-right">
+                            <strong>Total Cost: $@total.ToString("0.00")</strong>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

@@ -10,13 +10,13 @@ namespace CardMaxxing.Services
     public class CartDataService : ICartDataService
     {
         private readonly IDbConnection _db;
-
-        public CartDataService(IDbConnection db)
+        private readonly IProductDataService _productService;
+        public CartDataService(IDbConnection db, IProductDataService productService)
         {
             _db = db;
+            _productService = productService;
         }
 
-        // Add item to cart (Increase quantity if exists)
         public async Task<bool> AddToCartAsync(string userId, string productId)
         {
             string query = @"
@@ -28,7 +28,6 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
-        // Remove item from cart (Decrease quantity, delete if zero)
         public async Task<bool> RemoveFromCartAsync(string userId, string productId)
         {
             using (var transaction = _db.BeginTransaction())
@@ -56,14 +55,34 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Get all items in the cart
         public async Task<List<OrderItemsModel>> GetCartItemsAsync(string userId)
         {
-            string query = "SELECT ProductID, Quantity FROM cart WHERE UserID = @UserID;";
-            return (await _db.QueryAsync<OrderItemsModel>(query, new { UserID = userId })).AsList();
-        }
+            string query = @"
+        SELECT oi.ID, oi.ProductID, oi.Quantity,
+               p.ID AS ProductID, p.Name, p.Price, p.ImageUrl
+        FROM order_items oi
+        JOIN products p ON oi.ProductID = p.ID
+        WHERE oi.OrderID IS NULL AND oi.UserID = @UserID;";
 
-        // Clear cart
+            var cartItems = await _db.QueryAsync<OrderItemsModel, ProductModel, OrderItemsModel>(
+                query,
+                (item, product) =>
+                {
+                    item.ProductID = product.ID; // Keep Product ID
+                    item.Product = product ?? new ProductModel(); // Attach Product details
+                    return item;
+                },
+                new { UserID = userId },
+                splitOn: "ProductID"
+            );
+
+            return cartItems.AsList();
+        }
+ 
+
+
+
+
         public async Task<bool> ClearCartAsync(string userId)
         {
             string query = "DELETE FROM cart WHERE UserID = @UserID;";
@@ -71,29 +90,25 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
-        // Checkout: Convert cart items into an order
         public async Task<bool> CheckoutAsync(string userId)
         {
             using (var transaction = _db.BeginTransaction())
             {
                 try
                 {
-                    // Create a new order
                     string orderId = Guid.NewGuid().ToString();
                     string createOrderQuery = @"
-                        INSERT INTO orders (ID, UserID, CreatedAt, Status) 
-                        VALUES (@ID, @UserID, NOW(), 'Pending');";
+                        INSERT INTO orders (ID, UserID, CreatedAt) 
+                        VALUES (@ID, @UserID, NOW());";
 
                     await _db.ExecuteAsync(createOrderQuery, new { ID = orderId, UserID = userId }, transaction);
 
-                    // Insert cart items into order_items
                     string addOrderItemsQuery = @"
                         INSERT INTO order_items (OrderID, ProductID, Quantity) 
                         SELECT @OrderID, ProductID, Quantity FROM cart WHERE UserID = @UserID;";
 
                     await _db.ExecuteAsync(addOrderItemsQuery, new { OrderID = orderId, UserID = userId }, transaction);
 
-                    // Clear cart after checkout
                     string clearCartQuery = "DELETE FROM cart WHERE UserID = @UserID;";
                     await _db.ExecuteAsync(clearCartQuery, new { UserID = userId }, transaction);
 
@@ -107,6 +122,34 @@ namespace CardMaxxing.Services
                     return false;
                 }
             }
+        }
+
+        public async Task<List<OrderModel>> GetOrdersByUserAsync(string userId)
+        {
+            string query = "SELECT * FROM orders WHERE UserID = @UserID ORDER BY CreatedAt DESC;";
+            return (await _db.QueryAsync<OrderModel>(query, new { UserID = userId })).AsList();
+        }
+
+        public async Task<List<OrderItemsModel>> GetOrderItemsAsync(string orderId)
+        {
+            string query = @"
+                SELECT oi.*, p.Name, p.Price
+                FROM order_items oi
+                JOIN products p ON oi.ProductID = p.ID
+                WHERE oi.OrderID = @OrderID;";
+
+            return (await _db.QueryAsync<OrderItemsModel>(query, new { OrderID = orderId })).AsList();
+        }
+
+        public async Task<decimal> GetOrderTotalAsync(string orderId)
+        {
+            string query = @"
+                SELECT SUM(p.Price * oi.Quantity) 
+                FROM order_items oi
+                JOIN products p ON oi.ProductID = p.ID
+                WHERE oi.OrderID = @OrderID;";
+
+            return await _db.ExecuteScalarAsync<decimal>(query, new { OrderID = orderId });
         }
     }
 }

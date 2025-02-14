@@ -4,12 +4,18 @@ using CardMaxxing.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MySql.Data.MySqlClient;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MySQL connection for Dapper
-builder.Services.AddScoped<IDbConnection>(sp =>
-    new MySqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Load Connection String Safely
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Database connection string is missing! Check appsettings.json.");
+}
+
+// Register MySQL Connection for Dapper (Transient Scope)
+builder.Services.AddTransient<IDbConnection>(sp => new MySqlConnection(connectionString));
+
 // Register Dependency Injection Services
 builder.Services.AddScoped<IUserDataService, UserDataService>();
 builder.Services.AddScoped<IProductDataService, ProductDataService>();
@@ -36,7 +42,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add controllers with views
 builder.Services.AddControllersWithViews();
 
-var app = builder.Build(); // 🚨 Once this is called, services cannot be modified!
+var app = builder.Build(); // 🚨 Services can’t be modified after this!
 
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
@@ -50,9 +56,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Add authentication and authorization
-app.UseAuthentication();  // Add this line for authentication middleware
-app.UseSession();
+// ✅ Ensure Middleware Order is Correct
+app.UseAuthentication();
+app.UseSession(); // ⚡ Session MUST be before Authorization
 app.UseAuthorization();
 
 app.MapControllerRoute(

@@ -29,10 +29,11 @@ body {
     border: 1px solid #333; /* Slight border for definition */
 }
 
-.card:hover {
-    transform: scale(1.05);
-    transition: 0.3s ease-in-out;
-}
+    .card:hover {
+        transform: scale(1.01);
+        background-color: #121212;
+        transition: 0.3s ease-in-out;
+    }
 
 .btn-dark {
     background-color: #333 !important;

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace CardMaxxing.Controllers
 {
@@ -14,11 +15,14 @@ namespace CardMaxxing.Controllers
     {
         private readonly IUserDataService _userService;
         private readonly IOrderDataService _orderService;
-
-        public UserController(IUserDataService userService, IOrderDataService orderService)
+        private readonly ICartDataService _cartService;
+        private readonly IProductDataService _productService;
+        public UserController(IUserDataService userService, IOrderDataService orderService, ICartDataService cartService, IProductDataService productService)
         {
             _userService = userService;
             _orderService = orderService;
+            _cartService = cartService;
+            _productService = productService;
         }
 
         // GET: User/Register - Show registration form
@@ -41,17 +45,12 @@ namespace CardMaxxing.Controllers
                 return View(user);
             }
 
-            // Create the user with the selected role (User or Admin)
-            bool result = await _userService.CreateUserAsync(user); // This method should hash the password and save the role along with other properties.
-            if (result)
-            {
-                return RedirectToAction("Login");
-            }
+            bool result = await _userService.CreateUserAsync(user);
+            if (result) return RedirectToAction("Login");
 
             ModelState.AddModelError("", "Error creating account.");
             return View(user);
         }
-
 
         // GET: User/Login - Show login form
         public IActionResult Login()
@@ -75,16 +74,14 @@ namespace CardMaxxing.Controllers
                 return View(credentials);
             }
 
-            // Retrieve user role from database
-            string role = user.Role ?? "User"; // Fallback to 'User' if Role is null (optional if Role is required)
+            string role = user.Role ?? "User";
 
-            // Create user claims for authentication
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.ID),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, role) // Store actual role from DB
+                new Claim(ClaimTypes.Role, role)
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -96,15 +93,7 @@ namespace CardMaxxing.Controllers
                 authProperties
             );
 
-            // Redirect based on role: if Admin, redirect to AdminDashboard; otherwise, redirect to Home/Index.
-            if (role == "Admin")
-            {
-                return RedirectToAction("AdminDashboard", "Admin");
-            }
-            else
-            {
-                return RedirectToAction("Index", "Home");
-            }
+            return role == "Admin" ? RedirectToAction("AdminDashboard", "Admin") : RedirectToAction("Index", "Home");
         }
 
         // GET: User/Dashboard - Protected User Dashboard
@@ -120,15 +109,129 @@ namespace CardMaxxing.Controllers
             return View(user);
         }
 
-        // GET: User/OrderHistory - View past orders (Protected)
+        // GET: User/OrderHistory - View past orders with order items
         [Authorize]
         public async Task<IActionResult> OrderHistory()
         {
             string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            List<OrderModel> orders = await _orderService.GetOrdersByUserIDAsync(userId);
-            return View(orders);
+            List<OrderModel> orders = await _cartService.GetOrdersByUserAsync(userId);
+            List<(OrderModel, List<OrderItemsModel>, decimal)> orderDetails = new();
+
+            foreach (var order in orders)
+            {
+                var items = await _cartService.GetOrderItemsAsync(order.ID);
+                decimal total = await _cartService.GetOrderTotalAsync(order.ID);
+                orderDetails.Add((order, items, total));
+            }
+
+            return View(orderDetails);
+        }
+
+        // GET: User/ShoppingCart - Display items in cart
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ShoppingCart()
+        {
+            var cart = GetCartFromSession();
+
+            foreach (var item in cart)
+            {
+                var product = await _productService.GetProductByIDAsync(item.ProductID); // Fetch product details
+                if (product != null)
+                {
+                    item.Product = product; // Assign full product data to the cart item
+                }
+            }
+
+            SaveCartToSession(cart); // Save updated cart back to session
+            return View(cart);
+        }
+
+
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddToCart(string productId)
+        {
+            var cart = GetCartFromSession();
+
+            var existingItem = cart.FirstOrDefault(item => item.ProductID == productId);
+            if (existingItem != null)
+            {
+                existingItem.Quantity++;
+            }
+            else
+            {
+                var product = await _productService.GetProductByIDAsync(productId); // Fetch product
+                if (product != null)
+                {
+                    cart.Add(new OrderItemsModel
+                    {
+                        ProductID = product.ID,
+                        Quantity = 1,
+                        Product = product // Store full product details
+                    });
+                }
+            }
+
+            SaveCartToSession(cart);
+            return RedirectToAction("ShoppingCart");
+        }
+
+
+        // Helper Method Get Cart from Session
+        private List<OrderItemsModel>? GetCartFromSession()
+        {
+            var cartJson = HttpContext.Session.GetString("Cart");
+            return string.IsNullOrEmpty(cartJson) ? new List<OrderItemsModel>() : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson);
+        }
+
+        // Helper Method Save Cart to Session
+        private void SaveCartToSession(List<OrderItemsModel> cart)
+        {
+            HttpContext.Session.SetString("Cart", JsonSerializer.Serialize(cart));
+        }
+        //POST: User/RemoveFromCart - Remove Item from Cart (Decrement or Remove)
+        [HttpPost]
+        [Authorize]
+        public IActionResult RemoveFromCart(string productId)
+        {
+            var cart = GetCartFromSession();
+            var item = cart.Find(x => x.ProductID == productId);
+
+            if (item != null)
+            {
+                item.Quantity--;
+                if (item.Quantity <= 0)
+                    cart.Remove(item);
+            }
+
+            SaveCartToSession(cart);
+            return RedirectToAction("ShoppingCart");
+        }
+        [HttpPost]
+        [Authorize]
+        public IActionResult ClearCart()
+        {
+            SaveCartToSession(new List<OrderItemsModel>());
+            return RedirectToAction("ShoppingCart");
+        }
+
+        // POST: User/Checkout - Converts cart into an order
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> Checkout()
+        {
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+
+            bool checkoutSuccess = await _cartService.CheckoutAsync(userId);
+            if (checkoutSuccess) return RedirectToAction("OrderHistory");
+
+            ModelState.AddModelError("", "Checkout failed. Try again.");
+            return RedirectToAction("ShoppingCart");
         }
 
         // GET: User/Logout - Logout User
@@ -137,7 +240,5 @@ namespace CardMaxxing.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }
-
-
     }
 }

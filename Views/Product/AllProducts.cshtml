@@ -5,6 +5,15 @@
 }
 
 <div class="container mt-5">
+
+    <!-- Success Message (Fades Away After 2 Secs) -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div id="success-message" class="alert alert-success text-center">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
     <!-- Product Grid -->
     <div class="row justify-content-center">
         @foreach (var product in Model)
@@ -21,20 +30,23 @@
                              style="max-height: 120px; object-fit: contain;">
 
                         <!-- Product Price -->
-                        <p class="mt-2 fw-bold text-light">$@product.Price.ToString("0.00")</p>
+                        <p class="mt-2 fw-bold text-success">$@product.Price.ToString("0.00")</p>
                     </div>
 
                     <!-- Action Icons -->
                     <div class="d-flex justify-content-between align-items-center px-3 mt-3">
                         <!-- Edit (Settings) Icon -->
-                        <a href="@Url.Action("Edit", "Product", new { id = product.ID })" class="text-light">
+                        <a href="@Url.Action("Edit", "Product", new { id = product.ID })" class="text-primary">
                             <i class="fas fa-cog fa-2x"></i>
                         </a>
 
                         <!-- Add to Cart Icon -->
-                        <a href="@Url.Action("AddToCart", "Cart", new { id = product.ID })" class="text-light">
-                            <i class="fas fa-plus-circle fa-2x"></i>
-                        </a>
+                        <form asp-action="AddToCart" asp-controller="User" method="post">
+                            <input type="hidden" name="productId" value="@product.ID" />
+                            <button type="submit" class="btn btn-link text-success">
+                                <i class="fas fa-plus-circle fa-2x"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -44,10 +56,14 @@
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll(".product-details").forEach(function (item) {
-                item.style.cursor = "pointer";
-            });
-        });
+        // Fade out success message after 2 seconds
+        setTimeout(function () {
+            let successMessage = document.getElementById("success-message");
+            if (successMessage) {
+                successMessage.style.transition = "opacity 1s ease-out";
+                successMessage.style.opacity = "0";
+                setTimeout(() => successMessage.remove(), 1000);
+            }
+        }, 2000);
     </script>
 }

@@ -43,25 +43,20 @@ namespace CardMaxxing.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateProduct(ProductModel product)
+        public async Task<IActionResult> Create(ProductModel product)
         {
             if (!ModelState.IsValid) return View(product);
 
-            bool exists = await _productService.CheckProductDuplicateAsync(product.Name);
-            if (exists)
+            bool success = await _productService.CreateProductAsync(product);
+
+            if (success)
             {
-                ModelState.AddModelError("Name", "Product with this name already exists.");
-                return View(product);
+                TempData["SuccessMessage"] = "Product created successfully!";
+                return RedirectToAction("AllProducts");
             }
 
-            bool created = await _productService.CreateProductAsync(product);
-            if (!created)
-            {
-                ModelState.AddModelError("", "Error creating product.");
-                return View(product);
-            }
-
-            return RedirectToAction(nameof(Index));
+            ModelState.AddModelError("", "Error creating product. Try again.");
+            return View(product);
         }
 
         // Show edit form (Admin only)

@@ -11,5 +11,8 @@ namespace CardMaxxing.Services
         Task<List<OrderItemsModel>> GetCartItemsAsync(string userId);
         Task<bool> ClearCartAsync(string userId);
         Task<bool> CheckoutAsync(string userId);
+        Task<List<OrderModel>> GetOrdersByUserAsync(string userId);
+        Task<List<OrderItemsModel>> GetOrderItemsAsync(string orderId);
+        Task<decimal> GetOrderTotalAsync(string orderId);
     }
 }

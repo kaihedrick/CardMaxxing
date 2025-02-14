@@ -1,23 +1,39 @@
 using CardMaxxing.Models;
+using CardMaxxing.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CardMaxxing.Controllers
 {
-    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IProductDataService _productService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IProductDataService productService)
         {
             _logger = logger;
+            _productService = productService;
         }
 
-        public IActionResult Index()
+        //this will return the view for the highest tier most trending graphics cards
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var allProducts = await _productService.GetAllProductsAsync();
+
+            // Filter for top-tier GPUs (adjust logic based on real product data)
+            var featuredProducts = allProducts
+                .Where(p => p.Name.Contains("RTX") || p.Name.Contains("RX")) // Ensures we grab specific models that are trending
+                .OrderByDescending(p => p.Price) // Prioritize the most expensive ones
+                .Take(3) // Limit to 3 Featured GPUs
+                .ToList();
+
+            return View(featuredProducts);
         }
 
         public IActionResult Privacy()
@@ -25,8 +41,8 @@ namespace CardMaxxing.Controllers
             return View();
         }
 
-        // Logged In User Home Dashboard view
-        [Authorize] // Ensures only logged-in users can access the dashboard
+        // Logged-In User Dashboard View
+        [Authorize]
         public IActionResult Dashboard()
         {
             return View();
