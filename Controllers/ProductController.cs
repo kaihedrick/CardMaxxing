@@ -18,7 +18,7 @@ namespace CardMaxxing.Controllers
         }
 
         // Show all products
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> AllProducts()
         {
             var products = await _productService.GetAllProductsAsync();
             return View(products);
