@@ -26,15 +26,9 @@ namespace CardMaxxing.Controllers
         }
 
         // Logged In User Home Dashboard view
+        [Authorize] // Ensures only logged-in users can access the dashboard
         public IActionResult Dashboard()
         {
-            string? userId = HttpContext.Session.GetString("UserId");
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                return RedirectToAction("Login", "User"); // Redirect to login if not authenticated
-            }
-
             return View();
         }
 
