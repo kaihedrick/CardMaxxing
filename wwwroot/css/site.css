@@ -29,6 +29,11 @@ body {
     border: 1px solid #333; /* Slight border for definition */
 }
 
+.card:hover {
+    transform: scale(1.05);
+    transition: 0.3s ease-in-out;
+}
+
 .btn-dark {
     background-color: #333 !important;
     border-color: #444;
@@ -58,3 +63,5 @@ body {
     max-height: 180px; /* Adjust height to fit the card */
     object-fit: contain; /* Ensures the entire image is visible */
 }
+
+

@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Dashboard";
-    var username = Context.Session.GetString("Username"); // Get logged-in username
+    var username = User.Identity.Name; // Retrieves the username from the claims
 }
 
 <div class="container mt-5">

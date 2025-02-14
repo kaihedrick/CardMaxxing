@@ -20,6 +20,13 @@ namespace CardMaxxing.Controllers
             _orderService = orderService;
         }
 
+        // GET: Admin/Dashboard - Admin-only dashboard
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminDashboard()
+        {
+            return View();
+        }
+
         // View all user orders (Admin Only)
         public async Task<IActionResult> AllOrders()
         {

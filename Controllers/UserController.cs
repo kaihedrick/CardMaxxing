@@ -76,7 +76,7 @@ namespace CardMaxxing.Controllers
             }
 
             // Retrieve user role from database
-            string role = user.Role ?? "User"; // Fallback to 'User' if Role is null
+            string role = user.Role ?? "User"; // Fallback to 'User' if Role is null (optional if Role is required)
 
             // Create user claims for authentication
             var claims = new List<Claim>
@@ -96,7 +96,15 @@ namespace CardMaxxing.Controllers
                 authProperties
             );
 
-            return RedirectToAction("Index", "Home");
+            // Redirect based on role: if Admin, redirect to AdminDashboard; otherwise, redirect to Home/Index.
+            if (role == "Admin")
+            {
+                return RedirectToAction("AdminDashboard", "Admin");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home");
+            }
         }
 
         // GET: User/Dashboard - Protected User Dashboard
@@ -121,13 +129,6 @@ namespace CardMaxxing.Controllers
 
             List<OrderModel> orders = await _orderService.GetOrdersByUserIDAsync(userId);
             return View(orders);
-        }
-
-        // GET: Admin/Dashboard - Admin-only dashboard
-        [Authorize(Roles = "Admin")]
-        public IActionResult AdminDashboard()
-        {
-            return View();
         }
 
         // GET: User/Logout - Logout User

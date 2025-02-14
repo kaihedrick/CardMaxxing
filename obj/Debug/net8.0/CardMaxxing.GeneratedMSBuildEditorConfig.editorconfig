@@ -26,6 +26,10 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = C:\Users\risma\source\repos\CST323\CardMaxxing
 build_property._RazorSourceGeneratorDebug = 
 
+[C:/Users/risma/source/repos/CST323/CardMaxxing/Views/Admin/AdminDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWRtaW5EYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/risma/source/repos/CST323/CardMaxxing/Views/Admin/AllOrders.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWxsT3JkZXJzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 

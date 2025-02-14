@@ -34,7 +34,7 @@ namespace CardMaxxing.Controllers
 
         // Show create product form (Admin only)
         [Authorize(Roles = "Admin")]
-        public IActionResult Create()
+        public IActionResult CreateProduct()
         {
             return View();
         }
@@ -43,7 +43,7 @@ namespace CardMaxxing.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create(ProductModel product)
+        public async Task<IActionResult> CreateProduct(ProductModel product)
         {
             if (!ModelState.IsValid) return View(product);
 

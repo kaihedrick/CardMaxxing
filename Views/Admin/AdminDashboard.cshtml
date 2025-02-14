@@ -1,0 +1,66 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+    var adminName = User.Identity.Name; // Retrieves the username from the claims
+}
+
+<div class="container mt-5">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-dark text-white text-center py-5 rounded shadow">
+        <h1 class="display-4">Welcome, <span class="text-warning">@adminName!</span> 🎩</h1>
+        <p class="lead">Effortlessly manage orders, users, and products from your powerful admin panel.</p>
+        <hr class="my-4 bg-light">
+        <p>Navigate below to perform administrative tasks.</p>
+    </div>
+
+    <!-- Admin Options Section -->
+    <div class="row text-center mt-5">
+        <!-- All Orders -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-light shadow-sm border-0">
+                <div class="card-body">
+                    <i class="fas fa-box-open fa-3x text-primary"></i> <!-- Orders Icon -->
+                    <h5 class="card-title mt-3">📦 View All Orders</h5>
+                    <p class="card-text">Monitor and manage all customer orders with ease.</p>
+                    <a asp-controller="Admin" asp-action="AllOrders" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Users -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-light shadow-sm border-0">
+                <div class="card-body">
+                    <i class="fas fa-users-cog fa-3x text-success"></i> <!-- Users Icon -->
+                    <h5 class="card-title mt-3">👥 Manage Users</h5>
+                    <p class="card-text">View, edit, and manage user roles and permissions.</p>
+                    <a asp-controller="Admin" asp-action="ManageUsers" class="btn btn-success">
+                        <i class="fas fa-user-edit"></i> Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Products -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-light shadow-sm border-0">
+                <div class="card-body">
+                    <i class="fas fa-plus-square fa-3x text-warning"></i> <!-- Product Icon -->
+                    <h5 class="card-title mt-3">🛒 Create Products</h5>
+                    <p class="card-text">Add new products to the store inventory.</p>
+                    <a asp-controller="Product" asp-action="CreateProduct" class="btn btn-warning text-dark">
+                        <i class="fas fa-plus"></i> Add Product
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="text-center mt-4">
+        <a asp-controller="Admin" asp-action="Logout" class="btn btn-danger btn-lg">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</div>
