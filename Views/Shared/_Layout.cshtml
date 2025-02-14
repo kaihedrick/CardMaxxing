@@ -97,6 +97,18 @@
                             </li>
                         }
                     </ul>
+
+                    <!-- Shopping Cart Icon for Users (Aligned Right) -->
+                    @if (User.Identity.IsAuthenticated && User.IsInRole("User"))
+                    {
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link text-light" asp-area="" asp-controller="Cart" asp-action="ShoppingCart">
+                                    <i class="fas fa-shopping-cart fa-lg"></i> Cart
+                                </a>
+                            </li>
+                        </ul>
+                    }
                 </div>
             </div>
         </nav>

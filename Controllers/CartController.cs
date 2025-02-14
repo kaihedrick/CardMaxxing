@@ -37,7 +37,7 @@ namespace CardMaxxing.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Cart()
+        public async Task<IActionResult> ShoppingCart()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login", "User");
