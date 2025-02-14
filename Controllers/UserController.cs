@@ -34,8 +34,6 @@ namespace CardMaxxing.Controllers
         {
             if (!ModelState.IsValid) return View(user);
 
-            user.Role = "User"; // Ensure new users are assigned the default 'User' role
-
             bool exists = await _userService.CheckEmailDuplicateAsync(user.Email);
             if (exists)
             {
@@ -43,7 +41,8 @@ namespace CardMaxxing.Controllers
                 return View(user);
             }
 
-            bool result = await _userService.CreateUserAsync(user); // Hashing is handled inside this method
+            // Create the user with the selected role (User or Admin)
+            bool result = await _userService.CreateUserAsync(user); // This method should hash the password and save the role along with other properties.
             if (result)
             {
                 return RedirectToAction("Login");

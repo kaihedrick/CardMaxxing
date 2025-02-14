@@ -23,6 +23,8 @@ namespace CardMaxxing.Models
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters.")]
         public string Password { get; set; }
         public bool Active { get; set; } = false;
+
+        [Required(ErrorMessage = "Role is required")]
         public string Role { get; set; }
 
         // Constructor to enforce default values, don't want a user being able to set their role as admin
