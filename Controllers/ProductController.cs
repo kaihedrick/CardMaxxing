@@ -110,12 +110,14 @@ namespace CardMaxxing.Controllers
             bool deleted = await _productService.DeleteProductAsync(id);
             if (!deleted)
             {
-                ModelState.AddModelError("", "Error deleting product.");
-                return View(product);
+                TempData["ErrorMessage"] = "Error deleting product. Try again.";
+                return RedirectToAction("EditProduct", new { id });
             }
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = "Product deleted successfully!";
+            return RedirectToAction("AllProducts");
         }
+
 
         // Search products by name or manufacturer
         public async Task<IActionResult> Search(string searchTerm)
@@ -127,5 +129,45 @@ namespace CardMaxxing.Controllers
             }
             return View("Index", results);
         }
+
+        // Show edit form (Admin only)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> EditProduct(string id)
+        {
+            var product = await _productService.GetProductByIDAsync(id);
+            if (product == null) return NotFound();
+
+            return View("EditProduct", product); // ✅ Explicitly reference "EditProduct.cshtml"
+        }
+
+
+
+        // Handle product editing (Admin only)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> EditProduct(string id, ProductModel product)
+        {
+            if (!ModelState.IsValid) return View(product);
+
+            var existingProduct = await _productService.GetProductByIDAsync(id);
+            if (existingProduct == null) return NotFound(); // Prevent editing a non-existing product
+
+            // Ensure we keep the same ID and update the new values
+            product.ID = id;
+
+            bool updated = await _productService.EditProductAsync(product);
+            if (!updated)
+            {
+                ModelState.AddModelError("", "Error updating product.");
+                return View(product);
+            }
+
+            TempData["SuccessMessage"] = "Product updated successfully!";
+            return RedirectToAction("AllProducts"); // Redirect to avoid reloading old data
+        }
+
+        // Handle product deletion (Admin only)
+
     }
 }

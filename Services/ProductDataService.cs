@@ -56,10 +56,15 @@ namespace CardMaxxing.Services
 
         public async Task<bool> EditProductAsync(ProductModel product)
         {
-            string query = @"UPDATE products 
-                             SET Name = @Name, Manufacturer = @Manufacturer, Description = @Description, 
-                                 Price = @Price, Quantity = @Quantity, ImageUrl = @ImageUrl
-                             WHERE ID = @ID;";
+            string query = @"
+        UPDATE products 
+        SET Name = @Name, 
+            Manufacturer = @Manufacturer, 
+            Description = @Description, 
+            Price = @Price, 
+            Quantity = @Quantity, 
+            ImageUrl = @ImageUrl
+        WHERE ID = @ID;"; // ✅ Ensure WHERE clause is correctly updating based on ID
 
             int rowsAffected = await _db.ExecuteAsync(query, product);
             return rowsAffected > 0;
