@@ -28,9 +28,15 @@ else
                             <ul class="list-group">
                                 @foreach (var item in items)
                                 {
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item d-flex align-items-center">
+                                        <div class="me-3">
+                                            <!-- Product Image -->
+                                            <img src="@item.Product.ImageUrl" alt="Product Image" class="img-thumbnail" style="width: 50px; height: 50px;">
+                                        </div>
                                         <div>
                                             <strong>Product ID:</strong> @item.ProductID
+                                            <br />
+                                            <strong>Product Name:</strong> @item.Product.Name
                                             <br />
                                             <small>Quantity: @item.Quantity</small>
                                         </div>

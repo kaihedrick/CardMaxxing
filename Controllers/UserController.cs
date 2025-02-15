@@ -116,18 +116,13 @@ namespace CardMaxxing.Controllers
             string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            List<OrderModel> orders = await _cartService.GetOrdersByUserAsync(userId);
-            List<(OrderModel, List<OrderItemsModel>, decimal)> orderDetails = new();
-
-            foreach (var order in orders)
-            {
-                var items = await _cartService.GetOrderItemsAsync(order.ID);
-                decimal total = await _cartService.GetOrderTotalAsync(order.ID);
-                orderDetails.Add((order, items, total));
-            }
+            List<(OrderModel, List<OrderItemsModel>, decimal)> orderDetails = await _orderService.GetOrdersWithDetailsByUserIDAsync(userId);
 
             return View(orderDetails);
         }
+
+
+
 
         // GET: User/ShoppingCart - Display items in cart
         [HttpGet]
@@ -149,44 +144,118 @@ namespace CardMaxxing.Controllers
             return View(cart);
         }
 
+        [HttpPost]
+        [Authorize]
+        public IActionResult UpdateCart([FromBody] Dictionary<string, string> request)
+        {
+            if (!request.ContainsKey("productId") || !request.ContainsKey("action"))
+            {
+                return BadRequest(new { error = "Invalid request data" });
+            }
+
+            string productId = request["productId"];
+            string action = request["action"];
+
+            var cart = GetCartFromSession();
+            var existingItem = cart.FirstOrDefault(item => item.ProductID == productId);
+
+            if (action == "add")
+            {
+                if (existingItem != null)
+                {
+                    existingItem.Quantity++;
+                }
+                else
+                {
+                    var product = _productService.GetProductByIDAsync(productId).Result;
+                    if (product != null)
+                    {
+                        existingItem = new OrderItemsModel
+                        {
+                            ProductID = product.ID,
+                            Quantity = 1,
+                            Product = product
+                        };
+                        cart.Add(existingItem);
+                    }
+                }
+            }
+            else if (action == "remove" && existingItem != null)
+            {
+                existingItem.Quantity--;
+
+                if (existingItem.Quantity <= 0)
+                {
+                    cart.Remove(existingItem);
+                    existingItem = null;  // ✅ Ensure it doesn't reappear as 1
+                }
+            }
+
+            SaveCartToSession(cart);
+
+            int updatedQuantity = existingItem?.Quantity ?? 0; // ✅ Ensure it remains 0 after removal
+            return Json(new { quantity = updatedQuantity });
+        }
+
+
+
+
+
 
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> AddToCart(string productId)
+        public IActionResult AddToCart([FromBody] Dictionary<string, string> request)
         {
-            var cart = GetCartFromSession();
+            if (!request.ContainsKey("productId"))
+            {
+                return BadRequest(new { error = "Invalid request data" });
+            }
 
+            string productId = request["productId"];
+            var cart = GetCartFromSession();
             var existingItem = cart.FirstOrDefault(item => item.ProductID == productId);
+
             if (existingItem != null)
             {
                 existingItem.Quantity++;
             }
             else
             {
-                var product = await _productService.GetProductByIDAsync(productId); // Fetch product
+                var product = _productService.GetProductByIDAsync(productId).Result;
                 if (product != null)
                 {
                     cart.Add(new OrderItemsModel
                     {
                         ProductID = product.ID,
                         Quantity = 1,
-                        Product = product // Store full product details
+                        Product = product
                     });
                 }
             }
 
             SaveCartToSession(cart);
-            return RedirectToAction("ShoppingCart");
+            int updatedQuantity = existingItem?.Quantity ?? 1;
+            return Json(new { quantity = updatedQuantity });
         }
+
+
 
 
         // Helper Method Get Cart from Session
-        private List<OrderItemsModel>? GetCartFromSession()
+        private List<OrderItemsModel> GetCartFromSession()
         {
             var cartJson = HttpContext.Session.GetString("Cart");
-            return string.IsNullOrEmpty(cartJson) ? new List<OrderItemsModel>() : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson);
+
+            if (string.IsNullOrEmpty(cartJson))
+            {
+                return new List<OrderItemsModel>();  // ✅ Return empty cart instead of null
+            }
+
+            return JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
         }
+
+
 
         // Helper Method Save Cart to Session
         private void SaveCartToSession(List<OrderItemsModel> cart)
@@ -220,19 +289,64 @@ namespace CardMaxxing.Controllers
         }
 
         // POST: User/Checkout - Converts cart into an order
-        [HttpPost]
+        [HttpGet]
         [Authorize]
         public async Task<IActionResult> Checkout()
         {
             string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
-            bool checkoutSuccess = await _cartService.CheckoutAsync(userId);
-            if (checkoutSuccess) return RedirectToAction("OrderHistory");
+            var cart = GetCartFromSession();
+            if (cart.Count == 0) return RedirectToAction("ShoppingCart");
 
-            ModelState.AddModelError("", "Checkout failed. Try again.");
-            return RedirectToAction("ShoppingCart");
+            string newOrderId = Guid.NewGuid().ToString();
+            var newOrder = new OrderModel { ID = newOrderId, UserID = userId };
+
+            // Ensure correct tuple format
+            decimal totalPrice = cart.Sum(item => item.Quantity * item.Product.Price);
+            var checkoutTuple = Tuple.Create(newOrder, cart, totalPrice);
+
+            return View("Checkout", checkoutTuple); // ✅ Match expected tuple format
         }
+
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ConfirmOrder()
+        {
+            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+
+            var cart = GetCartFromSession();
+            if (cart.Count == 0) return RedirectToAction("ShoppingCart");
+
+            // ✅ Generate a new order ID
+            string newOrderId = Guid.NewGuid().ToString();
+            var newOrder = new OrderModel { ID = newOrderId, UserID = userId };
+
+            // ✅ Create Order with Items and Update Stock
+            bool orderCreated = await _orderService.CreateOrderWithItemsAsync(newOrder, cart);
+
+            if (!orderCreated)
+            {
+                ModelState.AddModelError("", "Failed to process order. Ensure products are in stock.");
+                return RedirectToAction("ShoppingCart");
+            }
+
+            // ✅ Clear Cart After Successful Order
+            SaveCartToSession(new List<OrderItemsModel>());
+
+            return RedirectToAction("OrderHistory");
+        }
+
+
+
+
+
+
+
+
+
 
         // GET: User/Logout - Logout User
         public async Task<IActionResult> Logout()

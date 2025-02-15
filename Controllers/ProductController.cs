@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace CardMaxxing.Controllers
 {
@@ -20,9 +21,18 @@ namespace CardMaxxing.Controllers
         // Show all products
         public async Task<IActionResult> AllProducts()
         {
-            var products = await _productService.GetAllProductsAsync();
-            return View(products);
+            var cartJson = HttpContext.Session.GetString("Cart");
+            var cart = string.IsNullOrEmpty(cartJson)
+                ? new List<OrderItemsModel>()
+                : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
+
+            ViewBag.Cart = cart;  // ✅ Pass cart to the view
+
+            var products = await _productService.GetAllProductsAsync(); // ✅ Await the async method
+            return View(products); // ✅ Now it passes List<ProductModel>, not Task<List<ProductModel>>
         }
+
+
 
         // Show product details
         public async Task<IActionResult> Details(string id)

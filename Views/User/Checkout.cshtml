@@ -1,0 +1,50 @@
+﻿@model Tuple<CardMaxxing.Models.OrderModel, List<CardMaxxing.Models.OrderItemsModel>, decimal>
+
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center">Checkout</h2>
+
+    <div class="card p-4 shadow-sm">
+        <h4>Order Number: <span class="fw-bold text-primary">@Model.Item1.ID</span></h4>
+        <p><strong>Order Date:</strong> @Model.Item1.CreatedAt.ToString("MMMM dd, yyyy")</p>
+    </div>
+
+    <h5 class="mt-4">Order Items</h5>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Item2)
+            {
+                var product = item.Product ?? new CardMaxxing.Models.ProductModel(); // Handle null safety
+
+                    <tr>
+                        <td><img src="@product.ImageUrl" alt="@product.Name" style="width: 50px; height: 50px; object-fit: contain;"></td>
+                        <td>@product.Name</td>
+                        <td>$@product.Price.ToString("0.00")</td>
+                        <td>@item.Quantity</td>
+                        <td>$@(item.Quantity * product.Price).ToString("0.00")</td>
+                    </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-end">
+        <h4><strong>Total Price:</strong> $@Model.Item3.ToString("0.00")</h4>
+    </div>
+
+    <form method="post" asp-action="ConfirmOrder" asp-controller="User">
+        <input type="hidden" name="orderId" value="@Model.Item1.ID" />
+        <button type="submit" class="btn btn-success mt-3">Confirm Purchase</button>
+    </form>
+</div>

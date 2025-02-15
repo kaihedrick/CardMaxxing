@@ -1,5 +1,6 @@
 ﻿using CardMaxxing.Models;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace CardMaxxing.Services
@@ -12,6 +13,7 @@ namespace CardMaxxing.Services
         Task<ProductModel> GetProductByIDAsync(string id);
         Task<List<ProductModel>> GetAllProductsAsync();
         Task<bool> CheckProductDuplicateAsync(string name);
-        Task<List<ProductModel>> SearchProductsAsync(string searchTerm);  
+        Task<List<ProductModel>> SearchProductsAsync(string searchTerm);
+        Task<bool> DecreaseStockAsync(string productId, int quantity);
     }
 }

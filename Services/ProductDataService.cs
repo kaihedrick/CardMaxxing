@@ -72,5 +72,27 @@ namespace CardMaxxing.Services
 
             return (await _db.QueryAsync<ProductModel>(query, new { SearchTerm = "%" + searchTerm + "%" })).AsList();
         }
+        public async Task<bool> DecreaseStockAsync(string productId, int quantity)
+        {
+            string query = @"
+        UPDATE products 
+        SET Quantity = Quantity - @Quantity 
+        WHERE ID = @ProductID AND Quantity >= @Quantity;";
+
+            int rowsAffected = await _db.ExecuteAsync(query, new { ProductID = productId, Quantity = quantity });
+
+            if (rowsAffected == 0)
+            {
+                Console.WriteLine($"[ERROR] Not enough stock for ProductID: {productId}. Current quantity may be too low.");
+            }
+            else
+            {
+                Console.WriteLine($"[INFO] Stock updated for ProductID: {productId}. Decreased by {quantity}.");
+            }
+
+            return rowsAffected > 0;
+        }
+
+
     }
 }

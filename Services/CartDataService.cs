@@ -58,18 +58,18 @@ namespace CardMaxxing.Services
         public async Task<List<OrderItemsModel>> GetCartItemsAsync(string userId)
         {
             string query = @"
-        SELECT oi.ID, oi.ProductID, oi.Quantity,
+        SELECT oi.ID, oi.OrderID, oi.ProductID, oi.Quantity,
                p.ID AS ProductID, p.Name, p.Price, p.ImageUrl
-        FROM order_items oi
+        FROM cart oi  
         JOIN products p ON oi.ProductID = p.ID
-        WHERE oi.OrderID IS NULL AND oi.UserID = @UserID;";
+        WHERE oi.UserID = @UserID;";
 
             var cartItems = await _db.QueryAsync<OrderItemsModel, ProductModel, OrderItemsModel>(
                 query,
                 (item, product) =>
                 {
-                    item.ProductID = product.ID; // Keep Product ID
-                    item.Product = product ?? new ProductModel(); // Attach Product details
+                    item.ProductID = product.ID;
+                    item.Product = product ?? new ProductModel();
                     return item;
                 },
                 new { UserID = userId },
@@ -78,10 +78,6 @@ namespace CardMaxxing.Services
 
             return cartItems.AsList();
         }
- 
-
-
-
 
         public async Task<bool> ClearCartAsync(string userId)
         {
@@ -92,24 +88,23 @@ namespace CardMaxxing.Services
 
         public async Task<bool> CheckoutAsync(string userId)
         {
+            string orderId = Guid.NewGuid().ToString();
+            string createOrderQuery = @"
+        INSERT INTO orders (ID, UserID, CreatedAt) 
+        VALUES (@ID, @UserID, NOW());";
+
+            string moveCartToOrderQuery = @"
+        INSERT INTO order_items (OrderID, ProductID, Quantity)
+        SELECT @OrderID, ProductID, Quantity FROM cart WHERE UserID = @UserID;";
+
+            string clearCartQuery = "DELETE FROM cart WHERE UserID = @UserID;";
+
             using (var transaction = _db.BeginTransaction())
             {
                 try
                 {
-                    string orderId = Guid.NewGuid().ToString();
-                    string createOrderQuery = @"
-                        INSERT INTO orders (ID, UserID, CreatedAt) 
-                        VALUES (@ID, @UserID, NOW());";
-
                     await _db.ExecuteAsync(createOrderQuery, new { ID = orderId, UserID = userId }, transaction);
-
-                    string addOrderItemsQuery = @"
-                        INSERT INTO order_items (OrderID, ProductID, Quantity) 
-                        SELECT @OrderID, ProductID, Quantity FROM cart WHERE UserID = @UserID;";
-
-                    await _db.ExecuteAsync(addOrderItemsQuery, new { OrderID = orderId, UserID = userId }, transaction);
-
-                    string clearCartQuery = "DELETE FROM cart WHERE UserID = @UserID;";
+                    await _db.ExecuteAsync(moveCartToOrderQuery, new { OrderID = orderId, UserID = userId }, transaction);
                     await _db.ExecuteAsync(clearCartQuery, new { UserID = userId }, transaction);
 
                     transaction.Commit();
@@ -123,6 +118,7 @@ namespace CardMaxxing.Services
                 }
             }
         }
+
 
         public async Task<List<OrderModel>> GetOrdersByUserAsync(string userId)
         {
@@ -141,15 +137,25 @@ namespace CardMaxxing.Services
             return (await _db.QueryAsync<OrderItemsModel>(query, new { OrderID = orderId })).AsList();
         }
 
-        public async Task<decimal> GetOrderTotalAsync(string orderId)
+        public async Task<bool> AddOrderItemAsync(string orderItemId, string orderId, string productId, int quantity)
         {
             string query = @"
-                SELECT SUM(p.Price * oi.Quantity) 
-                FROM order_items oi
-                JOIN products p ON oi.ProductID = p.ID
-                WHERE oi.OrderID = @OrderID;";
+        INSERT INTO order_items (ID, OrderID, ProductID, Quantity)
+        VALUES (@OrderItemID, @OrderID, @ProductID, @Quantity)
+        ON DUPLICATE KEY UPDATE Quantity = Quantity + @Quantity;";
 
-            return await _db.ExecuteScalarAsync<decimal>(query, new { OrderID = orderId });
+            int rowsAffected = await _db.ExecuteAsync(query, new
+            {
+                OrderItemID = orderItemId,  // Unique ID for order item
+                OrderID = orderId,
+                ProductID = productId,
+                Quantity = quantity
+            });
+
+            return rowsAffected > 0;
         }
+
+
+
     }
 }
