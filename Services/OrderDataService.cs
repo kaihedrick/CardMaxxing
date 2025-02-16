@@ -12,11 +12,13 @@ namespace CardMaxxing.Services
     {
         private readonly IDbConnection _db;
 
+        // Initialize the order data service with a database connection.
         public OrderDataService(IDbConnection db)
         {
             _db = db;
         }
 
+        // Create a new order record.
         public async Task<bool> CreateOrderAsync(OrderModel order)
         {
             string query = @"INSERT INTO orders (ID, UserID, CreatedAt)
@@ -31,16 +33,17 @@ namespace CardMaxxing.Services
 
             return rowsAffected > 0;
         }
+
+        // Create an order with items and update the product stock.
         public async Task<bool> CreateOrderWithItemsAsync(OrderModel order, List<OrderItemsModel> items)
         {
             using (var connection = new MySqlConnection(_db.ConnectionString))
             {
                 await connection.OpenAsync();
-                using (var transaction = await connection.BeginTransactionAsync()) // ✅ Ensure atomic operations
+                using (var transaction = await connection.BeginTransactionAsync())
                 {
                     try
                     {
-                        // ✅ Step 1: Insert the Order
                         string createOrderQuery = @"
                     INSERT INTO orders (ID, UserID, CreatedAt) 
                     VALUES (@ID, @UserID, NOW());";
@@ -57,7 +60,6 @@ namespace CardMaxxing.Services
                             return false;
                         }
 
-                        // ✅ Step 2: Insert Order Items
                         string addItemQuery = @"
                     INSERT INTO order_items (ID, OrderID, ProductID, Quantity)
                     VALUES (@ID, @OrderID, @ProductID, @Quantity);";
@@ -78,7 +80,6 @@ namespace CardMaxxing.Services
                                 return false;
                             }
 
-                            // ✅ Step 3: Update Product Stock
                             string updateStockQuery = @"
                         UPDATE products 
                         SET Quantity = Quantity - @Quantity
@@ -90,14 +91,13 @@ namespace CardMaxxing.Services
                                 Quantity = item.Quantity
                             }, transaction);
 
-                            if (stockUpdated == 0) // 🚨 Stock issue
+                            if (stockUpdated == 0)
                             {
                                 await transaction.RollbackAsync();
                                 return false;
                             }
                         }
 
-                        // ✅ Step 4: Commit Transaction
                         await transaction.CommitAsync();
                         return true;
                     }
@@ -111,9 +111,7 @@ namespace CardMaxxing.Services
             }
         }
 
-
-
-
+        // Delete an order by its ID.
         public async Task<bool> DeleteOrderAsync(string id)
         {
             string query = "DELETE FROM orders WHERE ID = @ID;";
@@ -121,18 +119,21 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
+        // Retrieve an order by its ID.
         public async Task<OrderModel> GetOrderByIDAsync(string id)
         {
             string query = "SELECT * FROM orders WHERE ID = @ID;";
             return await _db.QueryFirstOrDefaultAsync<OrderModel>(query, new { ID = id });
         }
 
+        // Get all orders for a user, sorted by creation date.
         public async Task<List<OrderModel>> GetOrdersByUserIDAsync(string userId)
         {
             string query = "SELECT * FROM orders WHERE UserID = @UserID ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query, new { UserID = userId })).AsList();
         }
 
+        // Get all items for a specific order with product details.
         public async Task<List<OrderItemsModel>> GetOrderItemsByOrderIDAsync(string orderId)
         {
             string query = @"
@@ -162,6 +163,7 @@ namespace CardMaxxing.Services
             return orderItems.AsList();
         }
 
+        // Get orders with their items and total amount for a user.
         public async Task<List<(OrderModel, List<OrderItemsModel>, decimal)>> GetOrdersWithDetailsByUserIDAsync(string userId)
         {
             var orders = await GetOrdersByUserIDAsync(userId);
@@ -171,12 +173,13 @@ namespace CardMaxxing.Services
             {
                 var items = await GetOrderItemsByOrderIDAsync(order.ID);
                 decimal total = await GetOrderTotalAsync(order.ID);
-                orderDetails.Add((order, items, total)); // ✅ Ensure the correct tuple structure
+                orderDetails.Add((order, items, total));
             }
 
             return orderDetails;
         }
 
+        // Calculate the total price of an order.
         public async Task<decimal> GetOrderTotalAsync(string orderId)
         {
             string query = @"
@@ -188,7 +191,7 @@ namespace CardMaxxing.Services
             return await _db.ExecuteScalarAsync<decimal>(query, new { OrderID = orderId });
         }
 
-
+        // Get all orders in the system.
         public async Task<List<OrderModel>> GetAllOrdersAsync()
         {
             string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";

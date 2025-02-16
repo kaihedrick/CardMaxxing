@@ -11,12 +11,15 @@ namespace CardMaxxing.Services
     {
         private readonly IDbConnection _db;
         private readonly IProductDataService _productService;
+
+        // Initialize service with database connection and product service.
         public CartDataService(IDbConnection db, IProductDataService productService)
         {
             _db = db;
             _productService = productService;
         }
 
+        // Add a product to the user's cart or increment its quantity.
         public async Task<bool> AddToCartAsync(string userId, string productId)
         {
             string query = @"
@@ -28,6 +31,7 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
+        // Remove a product from the user's cart or decrement its quantity.
         public async Task<bool> RemoveFromCartAsync(string userId, string productId)
         {
             using (var transaction = _db.BeginTransaction())
@@ -55,6 +59,7 @@ namespace CardMaxxing.Services
             }
         }
 
+        // Retrieve all items in the user's cart with their product details.
         public async Task<List<OrderItemsModel>> GetCartItemsAsync(string userId)
         {
             string query = @"
@@ -79,6 +84,7 @@ namespace CardMaxxing.Services
             return cartItems.AsList();
         }
 
+        // Clear all items from the user's cart.
         public async Task<bool> ClearCartAsync(string userId)
         {
             string query = "DELETE FROM cart WHERE UserID = @UserID;";
@@ -86,6 +92,7 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
+        // Create an order from the cart items and then clear the cart.
         public async Task<bool> CheckoutAsync(string userId)
         {
             string orderId = Guid.NewGuid().ToString();
@@ -119,13 +126,14 @@ namespace CardMaxxing.Services
             }
         }
 
-
+        // Get all orders made by the user.
         public async Task<List<OrderModel>> GetOrdersByUserAsync(string userId)
         {
             string query = "SELECT * FROM orders WHERE UserID = @UserID ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query, new { UserID = userId })).AsList();
         }
 
+        // Retrieve all items for a specific order with product details.
         public async Task<List<OrderItemsModel>> GetOrderItemsAsync(string orderId)
         {
             string query = @"
@@ -137,6 +145,7 @@ namespace CardMaxxing.Services
             return (await _db.QueryAsync<OrderItemsModel>(query, new { OrderID = orderId })).AsList();
         }
 
+        // Add a new order item or update its quantity if it exists.
         public async Task<bool> AddOrderItemAsync(string orderItemId, string orderId, string productId, int quantity)
         {
             string query = @"
@@ -146,7 +155,7 @@ namespace CardMaxxing.Services
 
             int rowsAffected = await _db.ExecuteAsync(query, new
             {
-                OrderItemID = orderItemId,  // Unique ID for order item
+                OrderItemID = orderItemId,
                 OrderID = orderId,
                 ProductID = productId,
                 Quantity = quantity
@@ -154,8 +163,5 @@ namespace CardMaxxing.Services
 
             return rowsAffected > 0;
         }
-
-
-
     }
 }

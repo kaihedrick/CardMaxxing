@@ -8,26 +8,27 @@ using System.Linq;
 
 namespace CardMaxxing.Controllers
 {
-    // Only admins can access this controller
+    // AdminController: Manages features available only to administrators.
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly IUserDataService _userService;
         private readonly IOrderDataService _orderService;
 
+        // Constructor: Sets up services for user and order operations.
         public AdminController(IUserDataService userService, IOrderDataService orderService)
         {
             _userService = userService;
             _orderService = orderService;
         }
 
-        // GET: Admin/Dashboard - Admin-only dashboard
+        // AdminDashboard Action: Returns the admin dashboard view.
         public IActionResult AdminDashboard()
         {
             return View();
         }
 
-        // ✅ View all orders from all users (Admin Only)
+        // AllOrders Action: Retrieves all orders with associated user details and total price.
         public async Task<IActionResult> AllOrders()
         {
             List<OrderModel> allOrders = await _orderService.GetAllOrdersAsync();
@@ -35,9 +36,11 @@ namespace CardMaxxing.Controllers
 
             foreach (var order in allOrders)
             {
+                // Get the user info for the order.
                 var user = await _userService.GetUserByIDAsync(order.UserID);
                 var userName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User";
 
+                // Get items and total price for the order.
                 var orderItems = await _orderService.GetOrderItemsByOrderIDAsync(order.ID);
                 var totalPrice = await _orderService.GetOrderTotalAsync(order.ID);
 

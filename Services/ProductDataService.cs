@@ -12,11 +12,13 @@ namespace CardMaxxing.Services
     {
         private readonly IDbConnection _db;
 
+        // Initialize with a database connection.
         public ProductDataService(IDbConnection db)
         {
             _db = db;
         }
 
+        // Check if a product with the given name exists.
         public async Task<bool> CheckProductDuplicateAsync(string name)
         {
             string query = "SELECT COUNT(*) FROM products WHERE Name = @Name;";
@@ -24,6 +26,7 @@ namespace CardMaxxing.Services
             return count > 0;
         }
 
+        // Create a new product entry.
         public async Task<bool> CreateProductAsync(ProductModel product)
         {
             string query = @"INSERT INTO products (ID, Name, Manufacturer, Description, Price, Quantity, ImageUrl)
@@ -35,6 +38,7 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
+        // Delete a product by its ID.
         public async Task<bool> DeleteProductAsync(string id)
         {
             string query = "DELETE FROM products WHERE ID = @ID;";
@@ -42,18 +46,21 @@ namespace CardMaxxing.Services
             return rowsAffected > 0;
         }
 
+        // Get a product using its unique ID.
         public async Task<ProductModel> GetProductByIDAsync(string id)
         {
             string query = "SELECT * FROM products WHERE ID = @ID;";
             return await _db.QueryFirstOrDefaultAsync<ProductModel>(query, new { ID = id });
         }
 
+        // Retrieve all products.
         public async Task<List<ProductModel>> GetAllProductsAsync()
         {
             string query = "SELECT * FROM products;";
             return (await _db.QueryAsync<ProductModel>(query)).AsList();
         }
 
+        // Update details of an existing product.
         public async Task<bool> EditProductAsync(ProductModel product)
         {
             string query = @"
@@ -64,26 +71,26 @@ namespace CardMaxxing.Services
             Price = @Price, 
             Quantity = @Quantity, 
             ImageUrl = @ImageUrl
-        WHERE ID = @ID;"; // ✅ Ensure WHERE clause is correctly updating based on ID
-
+        WHERE ID = @ID;";
             int rowsAffected = await _db.ExecuteAsync(query, product);
             return rowsAffected > 0;
         }
 
+        // Search for products by name or manufacturer.
         public async Task<List<ProductModel>> SearchProductsAsync(string searchTerm)
         {
             string query = @"SELECT * FROM products 
                              WHERE Name LIKE @SearchTerm OR Manufacturer LIKE @SearchTerm;";
-
             return (await _db.QueryAsync<ProductModel>(query, new { SearchTerm = "%" + searchTerm + "%" })).AsList();
         }
+
+        // Reduce the stock of a product by a given quantity.
         public async Task<bool> DecreaseStockAsync(string productId, int quantity)
         {
             string query = @"
         UPDATE products 
         SET Quantity = Quantity - @Quantity 
         WHERE ID = @ProductID AND Quantity >= @Quantity;";
-
             int rowsAffected = await _db.ExecuteAsync(query, new { ProductID = productId, Quantity = quantity });
 
             if (rowsAffected == 0)
@@ -97,7 +104,5 @@ namespace CardMaxxing.Services
 
             return rowsAffected > 0;
         }
-
-
     }
 }

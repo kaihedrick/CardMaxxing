@@ -17,6 +17,7 @@ namespace CardMaxxing.Controllers
         private readonly IOrderDataService _orderService;
         private readonly ICartDataService _cartService;
         private readonly IProductDataService _productService;
+
         public UserController(IUserDataService userService, IOrderDataService orderService, ICartDataService cartService, IProductDataService productService)
         {
             _userService = userService;
@@ -25,13 +26,13 @@ namespace CardMaxxing.Controllers
             _productService = productService;
         }
 
-        // GET: User/Register - Show registration form
+        // Render the registration form.
         public IActionResult Register()
         {
             return View();
         }
 
-        // POST: User/Register - Register a new user
+        // Process registration form submission.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(UserModel user)
@@ -52,13 +53,13 @@ namespace CardMaxxing.Controllers
             return View(user);
         }
 
-        // GET: User/Login - Show login form
+        // Render the login form.
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: User/Login - Authenticate user (Using Claims & Cookies)
+        // Process login and set up authentication.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginModel credentials)
@@ -75,7 +76,6 @@ namespace CardMaxxing.Controllers
             }
 
             string role = user.Role ?? "User";
-
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.ID),
@@ -87,16 +87,12 @@ namespace CardMaxxing.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties { IsPersistent = true };
 
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties
-            );
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
 
             return role == "Admin" ? RedirectToAction("AdminDashboard", "Admin") : RedirectToAction("Index", "Home");
         }
 
-        // GET: User/Dashboard - Protected User Dashboard
+        // Show the user's dashboard.
         [Authorize]
         public async Task<IActionResult> Dashboard()
         {
@@ -109,7 +105,7 @@ namespace CardMaxxing.Controllers
             return View(user);
         }
 
-        // GET: User/OrderHistory - View past orders with order items
+        // Display the user's order history.
         [Authorize]
         public async Task<IActionResult> OrderHistory()
         {
@@ -117,33 +113,28 @@ namespace CardMaxxing.Controllers
             if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
 
             List<(OrderModel, List<OrderItemsModel>, decimal)> orderDetails = await _orderService.GetOrdersWithDetailsByUserIDAsync(userId);
-
             return View(orderDetails);
         }
 
-
-
-
-        // GET: User/ShoppingCart - Display items in cart
+        // Display the shopping cart with product details.
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ShoppingCart()
         {
             var cart = GetCartFromSession();
-
-            foreach (var item in cart)
+            for (int i = 0; i < cart.Count; i++)
             {
-                var product = await _productService.GetProductByIDAsync(item.ProductID); // Fetch product details
+                var product = await _productService.GetProductByIDAsync(cart[i].ProductID);
                 if (product != null)
                 {
-                    item.Product = product; // Assign full product data to the cart item
+                    cart[i].Product = product;
                 }
             }
-
-            SaveCartToSession(cart); // Save updated cart back to session
+            SaveCartToSession(cart);
             return View(cart);
         }
 
+        // Update the shopping cart by adding or removing a product.
         [HttpPost]
         [Authorize]
         public IActionResult UpdateCart([FromBody] Dictionary<string, string> request)
@@ -155,7 +146,6 @@ namespace CardMaxxing.Controllers
 
             string productId = request["productId"];
             string action = request["action"];
-
             var cart = GetCartFromSession();
             var existingItem = cart.FirstOrDefault(item => item.ProductID == productId);
 
@@ -183,26 +173,18 @@ namespace CardMaxxing.Controllers
             else if (action == "remove" && existingItem != null)
             {
                 existingItem.Quantity--;
-
                 if (existingItem.Quantity <= 0)
                 {
                     cart.Remove(existingItem);
-                    existingItem = null;  // ✅ Ensure it doesn't reappear as 1
+                    existingItem = null;
                 }
             }
-
             SaveCartToSession(cart);
-
-            int updatedQuantity = existingItem?.Quantity ?? 0; // ✅ Ensure it remains 0 after removal
+            int updatedQuantity = existingItem?.Quantity ?? 0;
             return Json(new { quantity = updatedQuantity });
         }
 
-
-
-
-
-
-
+        // Add a product to the shopping cart.
         [HttpPost]
         [Authorize]
         public IActionResult AddToCart([FromBody] Dictionary<string, string> request)
@@ -233,53 +215,46 @@ namespace CardMaxxing.Controllers
                     });
                 }
             }
-
             SaveCartToSession(cart);
             int updatedQuantity = existingItem?.Quantity ?? 1;
             return Json(new { quantity = updatedQuantity });
         }
 
-
-
-
-        // Helper Method Get Cart from Session
+        // Retrieve the shopping cart from the session.
         private List<OrderItemsModel> GetCartFromSession()
         {
             var cartJson = HttpContext.Session.GetString("Cart");
-
             if (string.IsNullOrEmpty(cartJson))
             {
-                return new List<OrderItemsModel>();  // ✅ Return empty cart instead of null
+                return new List<OrderItemsModel>();
             }
-
             return JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
         }
 
-
-
-        // Helper Method Save Cart to Session
+        // Save the shopping cart to the session.
         private void SaveCartToSession(List<OrderItemsModel> cart)
         {
             HttpContext.Session.SetString("Cart", JsonSerializer.Serialize(cart));
         }
-        //POST: User/RemoveFromCart - Remove Item from Cart (Decrement or Remove)
+
+        // Remove or decrement a product from the shopping cart.
         [HttpPost]
         [Authorize]
         public IActionResult RemoveFromCart(string productId)
         {
             var cart = GetCartFromSession();
             var item = cart.Find(x => x.ProductID == productId);
-
             if (item != null)
             {
                 item.Quantity--;
                 if (item.Quantity <= 0)
                     cart.Remove(item);
             }
-
             SaveCartToSession(cart);
             return RedirectToAction("ShoppingCart");
         }
+
+        // Clear all items from the shopping cart.
         [HttpPost]
         [Authorize]
         public IActionResult ClearCart()
@@ -288,7 +263,7 @@ namespace CardMaxxing.Controllers
             return RedirectToAction("ShoppingCart");
         }
 
-        // POST: User/Checkout - Converts cart into an order
+        // Prepare the checkout view with order details.
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Checkout()
@@ -301,15 +276,12 @@ namespace CardMaxxing.Controllers
 
             string newOrderId = Guid.NewGuid().ToString();
             var newOrder = new OrderModel { ID = newOrderId, UserID = userId };
-
-            // Ensure correct tuple format
             decimal totalPrice = cart.Sum(item => item.Quantity * item.Product.Price);
             var checkoutTuple = Tuple.Create(newOrder, cart, totalPrice);
-
-            return View("Checkout", checkoutTuple); // ✅ Match expected tuple format
+            return View("Checkout", checkoutTuple);
         }
 
-
+        // Confirm the order and clear the shopping cart.
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> ConfirmOrder()
@@ -320,11 +292,8 @@ namespace CardMaxxing.Controllers
             var cart = GetCartFromSession();
             if (cart.Count == 0) return RedirectToAction("ShoppingCart");
 
-            // ✅ Generate a new order ID
             string newOrderId = Guid.NewGuid().ToString();
             var newOrder = new OrderModel { ID = newOrderId, UserID = userId };
-
-            // ✅ Create Order with Items and Update Stock
             bool orderCreated = await _orderService.CreateOrderWithItemsAsync(newOrder, cart);
 
             if (!orderCreated)
@@ -332,23 +301,11 @@ namespace CardMaxxing.Controllers
                 ModelState.AddModelError("", "Failed to process order. Ensure products are in stock.");
                 return RedirectToAction("ShoppingCart");
             }
-
-            // ✅ Clear Cart After Successful Order
             SaveCartToSession(new List<OrderItemsModel>());
-
             return RedirectToAction("OrderHistory");
         }
 
-
-
-
-
-
-
-
-
-
-        // GET: User/Logout - Logout User
+        // Log out the current user.
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

@@ -18,7 +18,7 @@ namespace CardMaxxing.Controllers
             _productService = productService;
         }
 
-        // Show all products
+        // Display all products with the user's cart.
         public async Task<IActionResult> AllProducts()
         {
             var cartJson = HttpContext.Session.GetString("Cart");
@@ -26,36 +26,35 @@ namespace CardMaxxing.Controllers
                 ? new List<OrderItemsModel>()
                 : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
 
-            ViewBag.Cart = cart;  // ✅ Pass cart to the view
-
-            var products = await _productService.GetAllProductsAsync(); // ✅ Await the async method
-            return View(products); // ✅ Now it passes List<ProductModel>, not Task<List<ProductModel>>
+            ViewBag.Cart = cart;
+            var products = await _productService.GetAllProductsAsync();
+            return View(products);
         }
 
-
-
-        // Show product details
+        // Display details for a specific product.
         public async Task<IActionResult> Details(string id)
         {
             var product = await _productService.GetProductByIDAsync(id);
-            if (product == null) return NotFound();
+            if (product == null)
+                return NotFound();
             return View(product);
         }
 
-        // Show create product form (Admin only)
+        // Render the form to create a new product.
         [Authorize(Roles = "Admin")]
         public IActionResult CreateProduct()
         {
             return View();
         }
 
-        // Handle product creation (Admin only)
+        // Process the creation of a new product.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(ProductModel product)
         {
-            if (!ModelState.IsValid) return View(product);
+            if (!ModelState.IsValid)
+                return View(product);
 
             bool success = await _productService.CreateProductAsync(product);
 
@@ -69,25 +68,28 @@ namespace CardMaxxing.Controllers
             return View(product);
         }
 
-        // Show edit form (Admin only)
+        // Render the form to edit an existing product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(string id)
         {
             var product = await _productService.GetProductByIDAsync(id);
-            if (product == null) return NotFound();
+            if (product == null)
+                return NotFound();
             return View(product);
         }
 
-        // Handle product editing (Admin only)
+        // Process the editing of an existing product.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(string id, ProductModel product)
         {
-            if (!ModelState.IsValid) return View(product);
+            if (!ModelState.IsValid)
+                return View(product);
 
             var existingProduct = await _productService.GetProductByIDAsync(id);
-            if (existingProduct == null) return NotFound();
+            if (existingProduct == null)
+                return NotFound();
 
             product.ID = id;
             bool updated = await _productService.EditProductAsync(product);
@@ -100,12 +102,13 @@ namespace CardMaxxing.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Handle product deletion (Admin only)
+        // Delete a product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
             var product = await _productService.GetProductByIDAsync(id);
-            if (product == null) return NotFound();
+            if (product == null)
+                return NotFound();
 
             bool deleted = await _productService.DeleteProductAsync(id);
             if (!deleted)
@@ -118,8 +121,7 @@ namespace CardMaxxing.Controllers
             return RedirectToAction("AllProducts");
         }
 
-
-        // Search products by name or manufacturer
+        // Search for products by name or manufacturer.
         public async Task<IActionResult> Search(string searchTerm)
         {
             var results = await _productService.SearchProductsAsync(searchTerm);
@@ -130,32 +132,31 @@ namespace CardMaxxing.Controllers
             return View("Index", results);
         }
 
-        // Show edit form (Admin only)
+        // Render the admin edit form for a product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditProduct(string id)
         {
             var product = await _productService.GetProductByIDAsync(id);
-            if (product == null) return NotFound();
+            if (product == null)
+                return NotFound();
 
-            return View("EditProduct", product); // ✅ Explicitly reference "EditProduct.cshtml"
+            return View("EditProduct", product);
         }
 
-
-
-        // Handle product editing (Admin only)
+        // Process the admin edit form submission.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditProduct(string id, ProductModel product)
         {
-            if (!ModelState.IsValid) return View(product);
+            if (!ModelState.IsValid)
+                return View(product);
 
             var existingProduct = await _productService.GetProductByIDAsync(id);
-            if (existingProduct == null) return NotFound(); // Prevent editing a non-existing product
+            if (existingProduct == null)
+                return NotFound();
 
-            // Ensure we keep the same ID and update the new values
             product.ID = id;
-
             bool updated = await _productService.EditProductAsync(product);
             if (!updated)
             {
@@ -164,10 +165,7 @@ namespace CardMaxxing.Controllers
             }
 
             TempData["SuccessMessage"] = "Product updated successfully!";
-            return RedirectToAction("AllProducts"); // Redirect to avoid reloading old data
+            return RedirectToAction("AllProducts");
         }
-
-        // Handle product deletion (Admin only)
-
     }
 }
