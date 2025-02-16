@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Home Page";
-    var cart = ViewBag.Cart as List<OrderItemsModel> ?? new List<OrderItemsModel>(); // ✅ Ensure cart is available
+    var cart = ViewBag.Cart as List<OrderItemsModel> ?? new List<OrderItemsModel>(); 
 }
 
 <!-- Hero Section -->
@@ -10,13 +10,13 @@
     <div class="container text-center">
         <h1 class="display-3 fw-bold">Welcome to <span class="text-warning">CardMaxxing</span> 🚀</h1>
         <p class="lead">Unleash the ultimate gaming and rendering power with top-tier graphics cards.</p>
-        <i class="fas fa-microchip fa-4x text-warning my-3"></i> <!-- GPU Icon -->
+        <i class="fas fa-microchip fa-4x text-light my-3"></i> 
         <div class="mt-4">
             <a asp-controller="Product" asp-action="AllProducts" class="btn btn-warning btn-lg">
-                <i class="fas fa-shopping-cart"></i> Browse GPUs
+                <i class="fas fa-shopping-cart text-light"></i> Browse GPUs 
             </a>
             <a asp-controller="Home" asp-action="About" class="btn btn-outline-light btn-lg">
-                <i class="fas fa-info-circle"></i> Learn More
+                <i class="fas fa-info-circle text-light"></i> Learn More 
             </a>
         </div>
     </div>
@@ -53,13 +53,13 @@
                         {
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-sm btn-outline-danger quantity-btn" onclick="updateCart('@product.ID', 'remove')">
-                                    <i class="fas fa-minus"></i>
+                                    <i class="fas fa-minus text-light"></i>
                                 </button>
 
                                 <span id="quantity-@product.ID" class="mx-2 fw-bold">@quantity</span>
 
                                 <button class="btn btn-sm btn-outline-success quantity-btn" onclick="updateCart('@product.ID', 'add')">
-                                    <i class="fas fa-plus"></i>
+                                    <i class="fas fa-plus text-light"></i> 
                                 </button>
                             </div>
                         }
@@ -70,7 +70,6 @@
     </div>
 </div>
 
-
 <!-- About Section -->
 <div class="container-fluid bg-light py-5">
     <div class="container text-center">
@@ -78,7 +77,7 @@
         <p class="text-muted">Your one-stop shop for premium GPUs at the best prices.</p>
         <div class="row mt-4">
             <div class="col-md-4">
-                <i class="fas fa-truck fa-3x text-dark"></i>
+                <i class="fas fa-truck fa-3x text-light"></i> 
                 <h5 class="mt-3">🚚 Fast Shipping</h5>
                 <p>Get your GPU delivered quickly and securely.</p>
             </div>
@@ -88,7 +87,7 @@
                 <p>Only the best brands and models, tested by experts.</p>
             </div>
             <div class="col-md-4">
-                <i class="fas fa-headset fa-3x text-dark"></i>
+                <i class="fas fa-headset fa-3x text-light"></i> 
                 <h5 class="mt-3">💬 24/7 Support</h5>
                 <p>Our team is always here to help you.</p>
             </div>
@@ -102,13 +101,13 @@
             fetch(`/User/UpdateCart`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: productId, action: action })  // ✅ Sending JSON payload
+                body: JSON.stringify({ productId: productId, action: action })  
             })
                 .then(response => response.json())
                 .then(data => {
                     let quantityElement = document.getElementById(`quantity-${productId}`);
                     if (quantityElement) {
-                        quantityElement.innerText = data.quantity;  // ✅ Dynamically update quantity
+                        quantityElement.innerText = data.quantity;  
                     }
                 })
                 .catch(error => console.error("Error updating cart:", error));
