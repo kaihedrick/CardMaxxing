@@ -5,17 +5,17 @@
 }
 
 <div class="container mt-5">
-    <h2 class="text-center">Checkout</h2>
+    <h2 class="text-center text-white">Checkout</h2>
 
-    <div class="card p-4 shadow-sm">
-        <h4>Order Number: <span class="fw-bold text-primary">@Model.Item1.ID</span></h4>
+    <div class="card p-4 shadow-sm bg-dark text-white">
+        <h4>Order Number: <span class="fw-bold text-warning">@Model.Item1.ID</span></h4>
         <p><strong>Order Date:</strong> @Model.Item1.CreatedAt.ToString("MMMM dd, yyyy")</p>
     </div>
 
-    <h5 class="mt-4">Order Items</h5>
+    <h5 class="mt-4 text-white">Order Items</h5>
     <table class="table table-striped">
-        <thead>
-            <tr>
+        <thead class="table-dark">
+            <tr class="text-white">
                 <th>Product</th>
                 <th>Name</th>
                 <th>Price</th>
@@ -28,19 +28,22 @@
             {
                 var product = item.Product ?? new CardMaxxing.Models.ProductModel(); // Handle null safety
 
-                    <tr>
-                        <td><img src="@product.ImageUrl" alt="@product.Name" style="width: 50px; height: 50px; object-fit: contain;"></td>
-                        <td>@product.Name</td>
-                        <td>$@product.Price.ToString("0.00")</td>
-                        <td>@item.Quantity</td>
-                        <td>$@(item.Quantity * product.Price).ToString("0.00")</td>
-                    </tr>
+                <tr class="text-white">
+                    <td>
+                        <img src="@product.ImageUrl" alt="@product.Name" class="img-thumbnail"
+                             style="width: 50px; height: 50px; object-fit: contain;">
+                    </td>
+                    <td>@product.Name</td>
+                    <td>@product.Price.ToString("C")</td>
+                    <td>@item.Quantity</td>
+                    <td>@((item.Quantity * product.Price).ToString("C"))</td>
+                </tr>
             }
         </tbody>
     </table>
 
     <div class="text-end">
-        <h4><strong>Total Price:</strong> $@Model.Item3.ToString("0.00")</h4>
+        <h4 class="fw-bold text-white">Total Price: @Model.Item3.ToString("C")</h4>
     </div>
 
     <form method="post" asp-action="ConfirmOrder" asp-controller="User">
