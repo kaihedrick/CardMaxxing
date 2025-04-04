@@ -3,8 +3,30 @@ using Dapper;
 using CardMaxxing.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MySql.Data.MySqlClient;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog with Loggly
+var logglyToken = builder.Configuration["Loggly:CustomerToken"];
+if (string.IsNullOrEmpty(logglyToken))
+{
+    throw new InvalidOperationException("Loggly customer token is missing! Check appsettings.json.");
+}
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Loggly(
+        customerToken: logglyToken,
+        tags: "CardMaxxing,Production"
+    )
+    .CreateLogger();
+
+// Add Serilog to the application
+builder.Host.UseSerilog();
 
 // Load Connection String Safely
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

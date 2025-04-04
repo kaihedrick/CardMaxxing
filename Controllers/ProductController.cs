@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace CardMaxxing.Controllers
 {
@@ -12,38 +13,64 @@ namespace CardMaxxing.Controllers
     public class ProductController : Controller
     {
         private readonly IProductDataService _productService;
+        private readonly ILogger<ProductController> _logger;
 
-        public ProductController(IProductDataService productService)
+        public ProductController(IProductDataService productService, ILogger<ProductController> logger)
         {
             _productService = productService;
+            _logger = logger;
         }
 
         // Display all products with the user's cart.
         public async Task<IActionResult> AllProducts()
         {
-            var cartJson = HttpContext.Session.GetString("Cart");
-            var cart = string.IsNullOrEmpty(cartJson)
-                ? new List<OrderItemsModel>()
-                : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
+            _logger.LogInformation("Fetching all products");
+            try
+            {
+                var cartJson = HttpContext.Session.GetString("Cart");
+                var cart = string.IsNullOrEmpty(cartJson)
+                    ? new List<OrderItemsModel>()
+                    : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
 
-            ViewBag.Cart = cart;
-            var products = await _productService.GetAllProductsAsync();
-            return View(products);
+                ViewBag.Cart = cart;
+                var products = await _productService.GetAllProductsAsync();
+                _logger.LogInformation("Successfully retrieved {Count} products", products.Count());
+                return View(products);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching products");
+                throw;
+            }
         }
 
         // Display details for a specific product.
         public async Task<IActionResult> Details(string id)
         {
-            var product = await _productService.GetProductByIDAsync(id);
-            if (product == null)
-                return NotFound();
-            return View(product);
+            _logger.LogInformation("Fetching details for product {ProductId}", id);
+            try
+            {
+                var product = await _productService.GetProductByIDAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product not found: {ProductId}", id);
+                    return NotFound();
+                }
+                _logger.LogInformation("Successfully retrieved product {ProductId}", id);
+                return View(product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching product {ProductId}", id);
+                throw;
+            }
         }
 
         // Render the form to create a new product.
         [Authorize(Roles = "Admin")]
         public IActionResult CreateProduct()
         {
+            _logger.LogInformation("Accessing create product form");
             return View();
         }
 
