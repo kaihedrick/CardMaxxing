@@ -2,52 +2,108 @@
 using CardMaxxing.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using System.Security.Claims;
 
 namespace CardMaxxing.Controllers
 {
-    // AdminController: Manages features available only to administrators.
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly IUserDataService _userService;
         private readonly IOrderDataService _orderService;
+        private readonly ILogger<AdminController> _logger;
+        private readonly TelemetryClient _telemetryClient;
 
-        // Constructor: Sets up services for user and order operations.
-        public AdminController(IUserDataService userService, IOrderDataService orderService)
+        public AdminController(
+            IUserDataService userService, 
+            IOrderDataService orderService,
+            ILogger<AdminController> logger,
+            TelemetryClient telemetryClient)
         {
             _userService = userService;
             _orderService = orderService;
+            _logger = logger;
+            _telemetryClient = telemetryClient;
         }
 
-        // AdminDashboard Action: Returns the admin dashboard view.
         public IActionResult AdminDashboard()
         {
-            return View();
+            string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("Admin {AdminId} accessing dashboard", adminId);
+            
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("AdminDashboard");
+                
+                _telemetryClient.TrackEvent("AdminDashboardViewed", new Dictionary<string, string>
+                {
+                    { "AdminId", adminId ?? "unknown" }
+                });
+                
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing admin dashboard for admin {AdminId}", adminId);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "AdminDashboard" },
+                    { "AdminId", adminId ?? "unknown" }
+                });
+                throw;
+            }
         }
 
-        // AllOrders Action: Retrieves all orders with associated user details and total price.
         public async Task<IActionResult> AllOrders()
         {
-            List<OrderModel> allOrders = await _orderService.GetAllOrdersAsync();
-            var ordersWithUsers = new List<(OrderModel, string, List<OrderItemsModel>, decimal)>();
-
-            foreach (var order in allOrders)
+            string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("Admin {AdminId} viewing all orders", adminId);
+            
+            try
             {
-                // Get the user info for the order.
-                var user = await _userService.GetUserByIDAsync(order.UserID);
-                var userName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User";
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("AdminAllOrders");
+                
+                List<OrderModel> allOrders = await _orderService.GetAllOrdersAsync();
+                var ordersWithUsers = new List<(OrderModel, string, List<OrderItemsModel>, decimal)>();
+                decimal totalRevenue = 0;
 
-                // Get items and total price for the order.
-                var orderItems = await _orderService.GetOrderItemsByOrderIDAsync(order.ID);
-                var totalPrice = await _orderService.GetOrderTotalAsync(order.ID);
+                foreach (var order in allOrders)
+                {
+                    var user = await _userService.GetUserByIDAsync(order.UserID);
+                    var userName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User";
+                    
+                    var orderItems = await _orderService.GetOrderItemsByOrderIDAsync(order.ID);
+                    var totalPrice = await _orderService.GetOrderTotalAsync(order.ID);
+                    totalRevenue += totalPrice;
 
-                ordersWithUsers.Add((order, userName, orderItems, totalPrice));
+                    ordersWithUsers.Add((order, userName, orderItems, totalPrice));
+                }
+
+                _logger.LogInformation("Retrieved {OrderCount} orders with total revenue ${TotalRevenue}", 
+                    allOrders.Count, totalRevenue);
+                
+                _telemetryClient.TrackEvent("AdminOrdersViewed", new Dictionary<string, string>
+                {
+                    { "AdminId", adminId ?? "unknown" },
+                    { "OrderCount", allOrders.Count.ToString() },
+                    { "TotalRevenue", totalRevenue.ToString("F2") },
+                    { "UniqueCustomers", ordersWithUsers.Select(o => o.Item1.UserID).Distinct().Count().ToString() }
+                });
+
+                return View(ordersWithUsers);
             }
-
-            return View(ordersWithUsers);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all orders for admin {AdminId}", adminId);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "AdminAllOrders" },
+                    { "AdminId", adminId ?? "unknown" }
+                });
+                throw;
+            }
         }
     }
 }

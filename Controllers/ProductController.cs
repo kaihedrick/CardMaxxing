@@ -2,11 +2,10 @@
 using CardMaxxing.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
-
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using System.Security.Claims;
 namespace CardMaxxing.Controllers
 {
     [Authorize]
@@ -14,11 +13,16 @@ namespace CardMaxxing.Controllers
     {
         private readonly IProductDataService _productService;
         private readonly ILogger<ProductController> _logger;
+        private readonly TelemetryClient _telemetryClient;
 
-        public ProductController(IProductDataService productService, ILogger<ProductController> logger)
+        public ProductController(
+            IProductDataService productService,
+            ILogger<ProductController> logger,
+            TelemetryClient telemetryClient)
         {
             _productService = productService;
             _logger = logger;
+            _telemetryClient = telemetryClient;
         }
 
         // Display all products with the user's cart.
@@ -27,6 +31,8 @@ namespace CardMaxxing.Controllers
             _logger.LogInformation("Fetching all products");
             try
             {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("AllProducts");
+                
                 var cartJson = HttpContext.Session.GetString("Cart");
                 var cart = string.IsNullOrEmpty(cartJson)
                     ? new List<OrderItemsModel>()
@@ -34,12 +40,23 @@ namespace CardMaxxing.Controllers
 
                 ViewBag.Cart = cart;
                 var products = await _productService.GetAllProductsAsync();
-                _logger.LogInformation("Successfully retrieved {Count} products", products.Count());
+                
+                _logger.LogInformation("Retrieved {Count} products", products.Count());
+                _telemetryClient.TrackEvent("ProductsViewed", new Dictionary<string, string>
+                {
+                    { "ProductCount", products.Count().ToString() },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
+                });
+                
                 return View(products);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching products");
+                _logger.LogError(ex, "Error retrieving all products");
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "AllProducts" }
+                });
                 throw;
             }
         }
@@ -47,21 +64,39 @@ namespace CardMaxxing.Controllers
         // Display details for a specific product.
         public async Task<IActionResult> Details(string id)
         {
-            _logger.LogInformation("Fetching details for product {ProductId}", id);
+            _logger.LogInformation("Viewing details for product {ProductId}", id);
             try
             {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("ProductDetails");
+                
                 var product = await _productService.GetProductByIDAsync(id);
                 if (product == null)
                 {
                     _logger.LogWarning("Product not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("ProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id }
+                    });
                     return NotFound();
                 }
-                _logger.LogInformation("Successfully retrieved product {ProductId}", id);
+                
+                _telemetryClient.TrackEvent("ProductDetailsViewed", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
+                });
+                
                 return View(product);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching product {ProductId}", id);
+                _logger.LogError(ex, "Error retrieving product details for {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "ProductDetails" },
+                    { "ProductId", id }
+                });
                 throw;
             }
         }
@@ -70,8 +105,28 @@ namespace CardMaxxing.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult CreateProduct()
         {
-            _logger.LogInformation("Accessing create product form");
-            return View();
+            _logger.LogInformation("Admin accessing create product form");
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("CreateProductForm");
+                
+                string userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+                _telemetryClient.TrackEvent("CreateProductFormViewed", new Dictionary<string, string>
+                {
+                    { "UserId", userId }
+                });
+                
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing create product form");
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "CreateProductForm" }
+                });
+                throw;
+            }
         }
 
         // Process the creation of a new product.
@@ -80,29 +135,99 @@ namespace CardMaxxing.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(ProductModel product)
         {
-            if (!ModelState.IsValid)
-                return View(product);
-
-            bool success = await _productService.CreateProductAsync(product);
-
-            if (success)
+            _logger.LogInformation("Admin attempting to create product {ProductName}", product.Name);
+            try
             {
-                TempData["SuccessMessage"] = "Product created successfully!";
-                return RedirectToAction("AllProducts");
-            }
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("CreateProduct");
+                
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state when creating product {ProductName}", product.Name);
+                    _telemetryClient.TrackEvent("ProductCreateValidationFailed", new Dictionary<string, string>
+                    {
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" },
+                        { "ValidationErrors", string.Join(", ", ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)) }
+                    });
+                    return View(product);
+                }
 
-            ModelState.AddModelError("", "Error creating product. Try again.");
-            return View(product);
+                bool success = await _productService.CreateProductAsync(product);
+
+                if (success)
+                {
+                    _logger.LogInformation("Product created successfully: {ProductName}", product.Name);
+                    _telemetryClient.TrackEvent("ProductCreated", new Dictionary<string, string>
+                    {
+                        { "ProductName", product.Name },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    TempData["SuccessMessage"] = "Product created successfully!";
+                    return RedirectToAction("AllProducts");
+                }
+
+                _logger.LogWarning("Failed to create product {ProductName}", product.Name);
+                _telemetryClient.TrackEvent("ProductCreateFailed", new Dictionary<string, string>
+                {
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                ModelState.AddModelError("", "Error creating product. Try again.");
+                return View(product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating product {ProductName}", product.Name);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "CreateProduct" },
+                    { "ProductName", product.Name }
+                });
+                throw;
+            }
         }
 
         // Render the form to edit an existing product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(string id)
         {
-            var product = await _productService.GetProductByIDAsync(id);
-            if (product == null)
-                return NotFound();
-            return View(product);
+            _logger.LogInformation("Admin accessing edit form for product {ProductId}", id);
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("EditProductForm");
+                
+                var product = await _productService.GetProductByIDAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product to edit not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("EditProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    return NotFound();
+                }
+                
+                _telemetryClient.TrackEvent("EditProductFormViewed", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                
+                return View(product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing edit form for product {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "EditProductForm" },
+                    { "ProductId", id }
+                });
+                throw;
+            }
         }
 
         // Process the editing of an existing product.
@@ -111,63 +236,213 @@ namespace CardMaxxing.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(string id, ProductModel product)
         {
-            if (!ModelState.IsValid)
-                return View(product);
-
-            var existingProduct = await _productService.GetProductByIDAsync(id);
-            if (existingProduct == null)
-                return NotFound();
-
-            product.ID = id;
-            bool updated = await _productService.EditProductAsync(product);
-            if (!updated)
+            _logger.LogInformation("Admin attempting to update product {ProductId}", id);
+            try
             {
-                ModelState.AddModelError("", "Error updating product.");
-                return View(product);
-            }
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("EditProduct");
+                
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state when updating product {ProductId}", id);
+                    _telemetryClient.TrackEvent("ProductEditValidationFailed", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" },
+                        { "ValidationErrors", string.Join(", ", ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)) }
+                    });
+                    return View(product);
+                }
 
-            return RedirectToAction(nameof(Index));
+                var existingProduct = await _productService.GetProductByIDAsync(id);
+                if (existingProduct == null)
+                {
+                    _logger.LogWarning("Product to update not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("UpdateProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    return NotFound();
+                }
+
+                product.ID = id;
+                bool updated = await _productService.EditProductAsync(product);
+                if (!updated)
+                {
+                    _logger.LogWarning("Failed to update product {ProductId}", id);
+                    _telemetryClient.TrackEvent("ProductUpdateFailed", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "ProductName", product.Name },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    ModelState.AddModelError("", "Error updating product.");
+                    return View(product);
+                }
+
+                _logger.LogInformation("Product updated successfully: {ProductId}", id);
+                _telemetryClient.TrackEvent("ProductUpdated", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating product {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "EditProduct" },
+                    { "ProductId", id }
+                });
+                throw;
+            }
         }
 
         // Delete a product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
-            var product = await _productService.GetProductByIDAsync(id);
-            if (product == null)
-                return NotFound();
-
-            bool deleted = await _productService.DeleteProductAsync(id);
-            if (!deleted)
+            _logger.LogInformation("Admin attempting to delete product {ProductId}", id);
+            try
             {
-                TempData["ErrorMessage"] = "Error deleting product. Try again.";
-                return RedirectToAction("EditProduct", new { id });
-            }
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("DeleteProduct");
+                
+                var product = await _productService.GetProductByIDAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product to delete not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("DeleteProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    return NotFound();
+                }
 
-            TempData["SuccessMessage"] = "Product deleted successfully!";
-            return RedirectToAction("AllProducts");
+                bool deleted = await _productService.DeleteProductAsync(id);
+                if (!deleted)
+                {
+                    _logger.LogWarning("Failed to delete product {ProductId}", id);
+                    _telemetryClient.TrackEvent("ProductDeleteFailed", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "ProductName", product.Name },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    TempData["ErrorMessage"] = "Error deleting product. Try again.";
+                    return RedirectToAction("EditProduct", new { id });
+                }
+
+                _logger.LogInformation("Product deleted successfully: {ProductId}", id);
+                _telemetryClient.TrackEvent("ProductDeleted", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                TempData["SuccessMessage"] = "Product deleted successfully!";
+                return RedirectToAction("AllProducts");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "DeleteProduct" },
+                    { "ProductId", id }
+                });
+                throw;
+            }
         }
 
         // Search for products by name or manufacturer.
         public async Task<IActionResult> Search(string searchTerm)
         {
-            var results = await _productService.SearchProductsAsync(searchTerm);
-            if (results.Count == 0)
+            _logger.LogInformation("User searching for products with term: {SearchTerm}", searchTerm);
+            try
             {
-                ViewBag.Message = "No products found.";
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("SearchProducts");
+                
+                var results = await _productService.SearchProductsAsync(searchTerm);
+                
+                _logger.LogInformation("Search for {SearchTerm} returned {Count} results", 
+                    searchTerm, results.Count);
+                _telemetryClient.TrackEvent("ProductSearch", new Dictionary<string, string>
+                {
+                    { "SearchTerm", searchTerm ?? "empty" },
+                    { "ResultCount", results.Count.ToString() },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
+                });
+                
+                if (results.Count == 0)
+                {
+                    _logger.LogInformation("No products found for search term: {SearchTerm}", searchTerm);
+                    _telemetryClient.TrackEvent("EmptySearchResults", new Dictionary<string, string>
+                    {
+                        { "SearchTerm", searchTerm ?? "empty" }
+                    });
+                    ViewBag.Message = "No products found.";
+                }
+                
+                return View("Index", results);
             }
-            return View("Index", results);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching for products with term: {SearchTerm}", searchTerm);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "SearchProducts" },
+                    { "SearchTerm", searchTerm ?? "empty" }
+                });
+                throw;
+            }
         }
 
         // Render the admin edit form for a product.
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditProduct(string id)
         {
-            var product = await _productService.GetProductByIDAsync(id);
-            if (product == null)
-                return NotFound();
-
-            return View("EditProduct", product);
+            _logger.LogInformation("Admin accessing edit product form for {ProductId}", id);
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("EditProductSpecial");
+                
+                var product = await _productService.GetProductByIDAsync(id);
+                if (product == null)
+                {
+                    _logger.LogWarning("Product for admin edit not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("AdminEditProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    return NotFound();
+                }
+                
+                _telemetryClient.TrackEvent("AdminEditProductFormViewed", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                
+                return View("EditProduct", product);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error accessing admin edit form for product {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "EditProductSpecial" },
+                    { "ProductId", id }
+                });
+                throw;
+            }
         }
 
         // Process the admin edit form submission.
@@ -176,23 +451,72 @@ namespace CardMaxxing.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditProduct(string id, ProductModel product)
         {
-            if (!ModelState.IsValid)
-                return View(product);
-
-            var existingProduct = await _productService.GetProductByIDAsync(id);
-            if (existingProduct == null)
-                return NotFound();
-
-            product.ID = id;
-            bool updated = await _productService.EditProductAsync(product);
-            if (!updated)
+            _logger.LogInformation("Admin submitting edit form for product {ProductId}", id);
+            try
             {
-                ModelState.AddModelError("", "Error updating product.");
-                return View(product);
-            }
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("EditProductSpecialSubmit");
+                
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state in admin edit for product {ProductId}", id);
+                    _telemetryClient.TrackEvent("AdminProductEditValidationFailed", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" },
+                        { "ValidationErrors", string.Join(", ", ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)) }
+                    });
+                    return View(product);
+                }
 
-            TempData["SuccessMessage"] = "Product updated successfully!";
-            return RedirectToAction("AllProducts");
+                var existingProduct = await _productService.GetProductByIDAsync(id);
+                if (existingProduct == null)
+                {
+                    _logger.LogWarning("Product for admin update not found: {ProductId}", id);
+                    _telemetryClient.TrackEvent("AdminUpdateProductNotFound", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    return NotFound();
+                }
+
+                product.ID = id;
+                bool updated = await _productService.EditProductAsync(product);
+                if (!updated)
+                {
+                    _logger.LogWarning("Admin failed to update product {ProductId}", id);
+                    _telemetryClient.TrackEvent("AdminProductUpdateFailed", new Dictionary<string, string>
+                    {
+                        { "ProductId", id },
+                        { "ProductName", product.Name },
+                        { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                    });
+                    ModelState.AddModelError("", "Error updating product.");
+                    return View(product);
+                }
+
+                _logger.LogInformation("Admin successfully updated product {ProductId}", id);
+                _telemetryClient.TrackEvent("AdminProductUpdated", new Dictionary<string, string>
+                {
+                    { "ProductId", id },
+                    { "ProductName", product.Name },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown" }
+                });
+                TempData["SuccessMessage"] = "Product updated successfully!";
+                return RedirectToAction("AllProducts");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in admin update for product {ProductId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "EditProductSpecialSubmit" },
+                    { "ProductId", id }
+                });
+                throw;
+            }
         }
     }
 }
