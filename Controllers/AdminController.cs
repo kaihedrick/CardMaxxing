@@ -16,6 +16,7 @@ namespace CardMaxxing.Controllers
         private readonly ILogger<AdminController> _logger;
         private readonly TelemetryClient _telemetryClient;
 
+        // Initializes a new instance of the AdminController with required dependencies
         public AdminController(
             IUserDataService userService, 
             IOrderDataService orderService,
@@ -28,6 +29,7 @@ namespace CardMaxxing.Controllers
             _telemetryClient = telemetryClient;
         }
 
+        // Displays the main admin dashboard view with overview metrics
         public IActionResult AdminDashboard()
         {
             string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -56,6 +58,7 @@ namespace CardMaxxing.Controllers
             }
         }
 
+        // Retrieves and displays all orders in the system with user details and totals
         public async Task<IActionResult> AllOrders()
         {
             string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

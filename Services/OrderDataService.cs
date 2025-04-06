@@ -1,139 +1,230 @@
 ﻿using Dapper;
 using MySql.Data.MySqlClient;
 using CardMaxxing.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace CardMaxxing.Services
 {
     public class OrderDataService : IOrderDataService
     {
         private readonly IDbConnection _db;
+        private readonly ILogger<OrderDataService> _logger;
+        private readonly TelemetryClient _telemetryClient;
 
-        // Initialize the order data service with a database connection.
-        public OrderDataService(IDbConnection db)
+        public OrderDataService(
+            IDbConnection db,
+            ILogger<OrderDataService> logger,
+            TelemetryClient telemetryClient)
         {
             _db = db;
+            _logger = logger;
+            _telemetryClient = telemetryClient;
         }
 
-        // Create a new order record.
+        // Creates a basic order record without items
         public async Task<bool> CreateOrderAsync(OrderModel order)
         {
-            string query = @"INSERT INTO orders (ID, UserID, CreatedAt)
-                             VALUES (@ID, @UserID, @CreatedAt);";
-
-            int rowsAffected = await _db.ExecuteAsync(query, new
+            _logger.LogInformation("Creating new order for user {UserId}", order.UserID);
+            try
             {
-                order.ID,
-                order.UserID,
-                order.CreatedAt
-            });
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("CreateOrder");
+                
+                string query = @"INSERT INTO orders (ID, UserID, CreatedAt)
+                               VALUES (@ID, @UserID, @CreatedAt);";
 
-            return rowsAffected > 0;
+                int rowsAffected = await _db.ExecuteAsync(query, order);
+
+                if (rowsAffected > 0)
+                {
+                    _logger.LogInformation("Order {OrderId} created successfully for user {UserId}", 
+                        order.ID, order.UserID);
+                    _telemetryClient.TrackEvent("OrderCreated", new Dictionary<string, string>
+                    {
+                        { "OrderId", order.ID },
+                        { "UserId", order.UserID }
+                    });
+                    return true;
+                }
+
+                _logger.LogWarning("Failed to create order for user {UserId}", order.UserID);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating order for user {UserId}", order.UserID);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "CreateOrder" },
+                    { "UserId", order.UserID }
+                });
+                throw;
+            }
         }
 
-        // Create an order with items and update the product stock.
+        // Creates an order with multiple items and handles inventory updates in a transaction
         public async Task<bool> CreateOrderWithItemsAsync(OrderModel order, List<OrderItemsModel> items)
         {
-            using (var connection = new MySqlConnection(_db.ConnectionString))
+            _logger.LogInformation("Creating order {OrderId} with {ItemCount} items for user {UserId}", 
+                order.ID, items.Count, order.UserID);
+            try
             {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("CreateOrderWithItems");
+                using var connection = new MySqlConnection(_db.ConnectionString);
+                
                 await connection.OpenAsync();
-                using (var transaction = await connection.BeginTransactionAsync())
+                using var transaction = await connection.BeginTransactionAsync();
+                
+                try
                 {
-                    try
-                    {
-                        string createOrderQuery = @"
-                    INSERT INTO orders (ID, UserID, CreatedAt) 
-                    VALUES (@ID, @UserID, NOW());";
+                    string createOrderQuery = @"
+                        INSERT INTO orders (ID, UserID, CreatedAt) 
+                        VALUES (@ID, @UserID, NOW());";
 
-                        int orderInserted = await connection.ExecuteAsync(createOrderQuery, new
+                    int orderInserted = await connection.ExecuteAsync(createOrderQuery, order, transaction);
+
+                    if (orderInserted == 0)
+                    {
+                        _logger.LogWarning("Failed to insert order header for {OrderId}", order.ID);
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
+
+                    decimal orderTotal = 0;
+                    foreach (var item in items)
+                    {
+                        string addItemQuery = @"
+                            INSERT INTO order_items (ID, OrderID, ProductID, Quantity)
+                            VALUES (@ID, @OrderID, @ProductID, @Quantity);";
+
+                        int itemInserted = await connection.ExecuteAsync(addItemQuery, new
                         {
-                            order.ID,
-                            order.UserID
+                            ID = Guid.NewGuid().ToString(),
+                            OrderID = order.ID,
+                            item.ProductID,
+                            item.Quantity
                         }, transaction);
 
-                        if (orderInserted == 0)
+                        if (itemInserted == 0)
                         {
+                            _logger.LogWarning("Failed to insert order item {ProductId} for order {OrderId}", 
+                                item.ProductID, order.ID);
                             await transaction.RollbackAsync();
                             return false;
                         }
 
-                        string addItemQuery = @"
-                    INSERT INTO order_items (ID, OrderID, ProductID, Quantity)
-                    VALUES (@ID, @OrderID, @ProductID, @Quantity);";
+                        string updateStockQuery = @"
+                            UPDATE products 
+                            SET Quantity = Quantity - @Quantity
+                            WHERE ID = @ProductID AND Quantity >= @Quantity;";
 
-                        foreach (var item in items)
+                        int stockUpdated = await connection.ExecuteAsync(updateStockQuery, new
                         {
-                            int itemInserted = await connection.ExecuteAsync(addItemQuery, new
-                            {
-                                ID = Guid.NewGuid().ToString(),
-                                OrderID = order.ID,
-                                ProductID = item.ProductID,
-                                Quantity = item.Quantity
-                            }, transaction);
+                            item.ProductID,
+                            item.Quantity
+                        }, transaction);
 
-                            if (itemInserted == 0)
-                            {
-                                await transaction.RollbackAsync();
-                                return false;
-                            }
-
-                            string updateStockQuery = @"
-                        UPDATE products 
-                        SET Quantity = Quantity - @Quantity
-                        WHERE ID = @ProductID AND Quantity >= @Quantity;";
-
-                            int stockUpdated = await connection.ExecuteAsync(updateStockQuery, new
-                            {
-                                ProductID = item.ProductID,
-                                Quantity = item.Quantity
-                            }, transaction);
-
-                            if (stockUpdated == 0)
-                            {
-                                await transaction.RollbackAsync();
-                                return false;
-                            }
+                        if (stockUpdated == 0)
+                        {
+                            _logger.LogWarning("Insufficient stock for product {ProductId} in order {OrderId}", 
+                                item.ProductID, order.ID);
+                            await transaction.RollbackAsync();
+                            return false;
                         }
 
-                        await transaction.CommitAsync();
-                        return true;
+                        orderTotal += item.Product?.Price * item.Quantity ?? 0;
                     }
-                    catch (Exception ex)
+
+                    await transaction.CommitAsync();
+                    
+                    _logger.LogInformation("Order {OrderId} created successfully with total ${OrderTotal}", 
+                        order.ID, orderTotal);
+                    _telemetryClient.TrackEvent("OrderWithItemsCreated", new Dictionary<string, string>
                     {
-                        await transaction.RollbackAsync();
-                        Console.WriteLine($"[ERROR] CreateOrderWithItemsAsync: {ex.Message}");
-                        return false;
-                    }
+                        { "OrderId", order.ID },
+                        { "UserId", order.UserID },
+                        { "ItemCount", items.Count.ToString() },
+                        { "OrderTotal", orderTotal.ToString("F2") }
+                    });
+                    
+                    return true;
                 }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new Exception($"Transaction failed for order {order.ID}", ex);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating order with items for user {UserId}", order.UserID);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "CreateOrderWithItems" },
+                    { "OrderId", order.ID },
+                    { "UserId", order.UserID }
+                });
+                return false;
             }
         }
 
-        // Delete an order by its ID.
+        // Removes an order and its associated items from the database
         public async Task<bool> DeleteOrderAsync(string id)
         {
-            string query = "DELETE FROM orders WHERE ID = @ID;";
-            int rowsAffected = await _db.ExecuteAsync(query, new { ID = id });
-            return rowsAffected > 0;
+            _logger.LogInformation("Deleting order {OrderId}", id);
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("DeleteOrder");
+                
+                string query = "DELETE FROM orders WHERE ID = @ID;";
+                int rowsAffected = await _db.ExecuteAsync(query, new { ID = id });
+                
+                if (rowsAffected > 0)
+                {
+                    _logger.LogInformation("Order {OrderId} deleted successfully", id);
+                    _telemetryClient.TrackEvent("OrderDeleted", new Dictionary<string, string>
+                    {
+                        { "OrderId", id }
+                    });
+                    return true;
+                }
+                
+                _logger.LogWarning("Order {OrderId} not found for deletion", id);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting order {OrderId}", id);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "DeleteOrder" },
+                    { "OrderId", id }
+                });
+                throw;
+            }
         }
 
-        // Retrieve an order by its ID.
+        // Retrieves a single order by its unique identifier
         public async Task<OrderModel> GetOrderByIDAsync(string id)
         {
             string query = "SELECT * FROM orders WHERE ID = @ID;";
             return await _db.QueryFirstOrDefaultAsync<OrderModel>(query, new { ID = id });
         }
 
-        // Get all orders for a user, sorted by creation date.
+        // Gets all orders for a specific user sorted by creation date
         public async Task<List<OrderModel>> GetOrdersByUserIDAsync(string userId)
         {
             string query = "SELECT * FROM orders WHERE UserID = @UserID ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query, new { UserID = userId })).AsList();
         }
 
-        // Get all items for a specific order with product details.
+        // Retrieves all items in an order with their associated product details
         public async Task<List<OrderItemsModel>> GetOrderItemsByOrderIDAsync(string orderId)
         {
             string query = @"
@@ -163,7 +254,7 @@ namespace CardMaxxing.Services
             return orderItems.AsList();
         }
 
-        // Get orders with their items and total amount for a user.
+        // Gets complete order details including items and totals for a user
         public async Task<List<(OrderModel, List<OrderItemsModel>, decimal)>> GetOrdersWithDetailsByUserIDAsync(string userId)
         {
             var orders = await GetOrdersByUserIDAsync(userId);
@@ -179,7 +270,7 @@ namespace CardMaxxing.Services
             return orderDetails;
         }
 
-        // Calculate the total price of an order.
+        // Calculates the total price of all items in an order
         public async Task<decimal> GetOrderTotalAsync(string orderId)
         {
             string query = @"
@@ -191,7 +282,7 @@ namespace CardMaxxing.Services
             return await _db.ExecuteScalarAsync<decimal>(query, new { OrderID = orderId });
         }
 
-        // Get all orders in the system.
+        // Retrieves all orders in the system sorted by creation date
         public async Task<List<OrderModel>> GetAllOrdersAsync()
         {
             string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";
