@@ -4,50 +4,75 @@
     ViewData["Title"] = "Create Product";
 }
 
-<h2 class="text-center">Create New Product</h2>
-
-<div class="container">
+<div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <form asp-action="Create" method="post">
-                <div class="form-group">
-                    <label asp-for="Name"></label>
-                    <input asp-for="Name" class="form-control" required minlength="2" maxlength="100" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
+        <div class="col-md-8 col-lg-6">
+            <div class="card product-create-card p-4 rounded mb-4 position-relative">
+                <!-- Back Arrow in the top left -->
+                <a href="javascript:history.back()" class="position-absolute" style="top: 1rem; left: 1rem; color: inherit; text-decoration: none;">
+                    <i class="fa-solid fa-arrow-rotate-left" style="font-size: 1.5rem;"></i>
+                </a>
+                
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Create New Product</h2>
 
-                <div class="form-group">
-                    <label asp-for="Manufacturer"></label>
-                    <input asp-for="Manufacturer" class="form-control" required minlength="2" maxlength="100" />
-                    <span asp-validation-for="Manufacturer" class="text-danger"></span>
-                </div>
+                    <form asp-action="Create" method="post">
+                        <div class="form-group mb-3">
+                            <label asp-for="Name" class="form-label">
+                                <i class="fas fa-tag me-1"></i> Product Name
+                            </label>
+                            <input asp-for="Name" class="form-control" required minlength="2" maxlength="100" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
 
-                <div class="form-group">
-                    <label asp-for="Description"></label>
-                    <textarea asp-for="Description" class="form-control" required minlength="5" maxlength="255"></textarea>
-                    <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Manufacturer" class="form-label">
+                                <i class="fas fa-industry me-1"></i> Manufacturer
+                            </label>
+                            <input asp-for="Manufacturer" class="form-control" required minlength="2" maxlength="100" />
+                            <span asp-validation-for="Manufacturer" class="text-danger small"></span>
+                        </div>
 
-                <div class="form-group">
-                    <label asp-for="Price"></label>
-                    <input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" required />
-                    <span asp-validation-for="Price" class="text-danger"></span>
-                </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Description" class="form-label">
+                                <i class="fas fa-align-left me-1"></i> Description
+                            </label>
+                            <textarea asp-for="Description" class="form-control" required minlength="5" maxlength="255" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
 
-                <div class="form-group">
-                    <label asp-for="Quantity"></label>
-                    <input asp-for="Quantity" class="form-control" type="number" min="1" required />
-                    <span asp-validation-for="Quantity" class="text-danger"></span>
-                </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Price" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i> Price
+                            </label>
+                            <input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" required />
+                            <span asp-validation-for="Price" class="text-danger small"></span>
+                        </div>
 
-                <div class="form-group">
-                    <label asp-for="ImageUrl"></label>
-                    <input asp-for="ImageUrl" class="form-control" type="url" required />
-                    <span asp-validation-for="ImageUrl" class="text-danger"></span>
-                </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="Quantity" class="form-label">
+                                <i class="fas fa-cubes me-1"></i> Quantity
+                            </label>
+                            <input asp-for="Quantity" class="form-control" type="number" min="1" required />
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                        </div>
 
-                <button type="submit" class="btn btn-primary mt-3">Create Product</button>
-            </form>
+                        <div class="form-group mb-4">
+                            <label asp-for="ImageUrl" class="form-label">
+                                <i class="fas fa-image me-1"></i> Image URL
+                            </label>
+                            <input asp-for="ImageUrl" class="form-control" type="url" required />
+                            <span asp-validation-for="ImageUrl" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i> Create Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

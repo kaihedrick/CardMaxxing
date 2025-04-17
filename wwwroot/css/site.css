@@ -196,4 +196,58 @@ body {
     color: #ccc; /* Optional: Change color on hover */
 }
 
+/* Product create card: no hover grow or color change */
+.product-create-card {
+    background-color: #1e1e1e;
+    color: white;
+    border: 1px solid #333;
+    transition: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.product-create-card:hover {
+    background-color: #1e1e1e;
+    color: white;
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Product edit card: no hover grow or color change */
+.product-edit-card {
+    background-color: #1e1e1e;
+    color: white;
+    border: 1px solid #333;
+    transition: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.product-edit-card:hover {
+    background-color: #1e1e1e;
+    color: white;
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Style for the Learn More button */
+.learn-more-btn {
+    background-color: #007bff; /* Primary blue color */
+    color: white;
+    border-color: #007bff;
+    transition: none; /* Remove transition effects */
+}
+
+/* Remove hover effect from learn more button */
+.learn-more-btn:hover {
+    color: white; /* Keep the text white on hover */
+    background-color: #007bff; /* Keep the background blue on hover */
+    border-color: #007bff; /* Keep the border blue on hover */
+}
+
+/* Remove hover effect from learn more button */
+.learn-more-btn:hover {
+    color: inherit; /* Inherit the default color */
+    background-color: transparent; /* Make the background transparent */
+    border-color: inherit; /* Inherit the default border color */
+}
+
 
