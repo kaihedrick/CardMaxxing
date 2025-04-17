@@ -379,17 +379,9 @@ namespace CardMaxxing.Controllers
                     { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
                 });
                 
-                if (results.Count == 0)
-                {
-                    _logger.LogInformation("No products found for search term: {SearchTerm}", searchTerm);
-                    _telemetryClient.TrackEvent("EmptySearchResults", new Dictionary<string, string>
-                    {
-                        { "SearchTerm", searchTerm ?? "empty" }
-                    });
-                    ViewBag.Message = "No products found.";
-                }
+                ViewBag.SearchTerm = searchTerm;
                 
-                return View("Index", results);
+                return View("Search", results);
             }
             catch (Exception ex)
             {
@@ -400,6 +392,51 @@ namespace CardMaxxing.Controllers
                     { "SearchTerm", searchTerm ?? "empty" }
                 });
                 throw;
+            }
+        }
+
+        // Handles AJAX search requests and returns partial HTML
+        public async Task<IActionResult> SearchPartial(string searchTerm)
+        {
+            _logger.LogInformation("User performing AJAX search with term: {SearchTerm}", searchTerm);
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("PartialSearch");
+                
+                var results = await _productService.SearchProductsAsync(searchTerm);
+                
+                _logger.LogInformation("Partial search for {SearchTerm} returned {Count} results", 
+                    searchTerm, results.Count);
+                _telemetryClient.TrackEvent("AjaxProductSearch", new Dictionary<string, string>
+                {
+                    { "SearchTerm", searchTerm ?? "empty" },
+                    { "ResultCount", results.Count.ToString() },
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
+                });
+                
+                // Get cart data for displaying quantities
+                var cartJson = HttpContext.Session.GetString("Cart");
+                var cart = string.IsNullOrEmpty(cartJson)
+                    ? new List<OrderItemsModel>()
+                    : JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
+                ViewBag.Cart = cart;
+                
+                if (!results.Any())
+                {
+                    return PartialView("_NoSearchResults", searchTerm);
+                }
+                
+                return PartialView("_ProductList", results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing partial search with term: {SearchTerm}", searchTerm);
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "PartialSearch" },
+                    { "SearchTerm", searchTerm ?? "empty" }
+                });
+                return Content("<div class='col-12'><div class='alert alert-danger'>An error occurred. Please try again.</div></div>");
             }
         }
 

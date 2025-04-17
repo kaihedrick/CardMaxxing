@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using System.Security.Claims;
 
 namespace CardMaxxing.Controllers
 {
@@ -157,6 +158,32 @@ namespace CardMaxxing.Controllers
                 {
                     { "Operation", "ErrorPage" },
                     { "RequestId", requestId }
+                });
+                throw;
+            }
+        }
+
+        // Show the About page.
+        public IActionResult About()
+        {
+            _logger.LogInformation("User accessing About page");
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("AboutPage");
+                
+                _telemetryClient.TrackEvent("AboutPageViewed", new Dictionary<string, string>
+                {
+                    { "UserId", User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous" }
+                });
+                
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading About page");
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "AboutPage" }
                 });
                 throw;
             }

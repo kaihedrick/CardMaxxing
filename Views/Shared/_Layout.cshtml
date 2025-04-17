@@ -21,7 +21,14 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="About">
+                                <i class="fas fa-info-circle"></i> About Us
+                            </a>
                         </li>
 
                         @if (User.Identity.IsAuthenticated)
@@ -68,7 +75,7 @@
 
                             <!-- Logout (Visible to both Admin & User) -->
                             <li class="nav-item">
-                                <a class="nav-link text-light" asp-area="" asp-controller="User" asp-action="Logout">
+                                <a class="nav-link text-light logout-link" asp-area="" asp-controller="User" asp-action="Logout">
                                     <i class="fas fa-sign-out-alt"></i> Logout
                                 </a>
                             </li>

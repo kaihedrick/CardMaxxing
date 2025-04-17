@@ -1,0 +1,54 @@
+@model CardMaxxing.Models.ProductModel
+
+@{
+    ViewData["Title"] = "Product Details";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card p-4 position-relative">
+                <!-- Back Arrow in the top left -->
+                <a href="javascript:history.back()" class="position-absolute" style="top: 1rem; left: 1rem; color: inherit; text-decoration: none;">
+                    <i class="fa-solid fa-arrow-rotate-left" style="font-size: 1.5rem;"></i>
+                </a>
+                <div class="text-center mb-4">
+                    <img src="@Model.ImageUrl" alt="@Model.Name" class="img-fluid rounded" style="max-height:200px;object-fit:contain;">
+                </div>
+                <h2 class="fw-bold mb-2">@Model.Name</h2>
+                <p class="text-muted mb-3">@Model.Description</p>
+                <p class="fw-bold text-success mb-3" style="font-size:1.25rem;">$@Model.Price.ToString("0.00")</p>
+                <div class="mb-3">
+                    <span class="text-secondary">Manufacturer:</span>
+                    <span class="fw-medium">@Model.Manufacturer</span>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary">Quantity:</span>
+                    <span class="fw-medium">@Model.Quantity</span>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary">Product ID:</span>
+                    <span class="fw-medium">@Model.ID</span>
+                </div>
+                <div class="mb-3">
+                    <span class="text-secondary">Image URL:</span>
+                    <span class="fw-medium">@Model.ImageUrl</span>
+                </div>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a href="@Url.Action("EditProduct", "Product", new { id = Model.ID })" class="btn btn-outline-primary mt-3">
+                        <i class="fas fa-cog"></i> Edit Product
+                    </a>
+                }
+                else if (User.IsInRole("User"))
+                {
+                    <form method="post" action="@Url.Action("AddToCart", "User", new { productId = Model.ID })" class="d-inline">
+                        <button type="submit" class="btn btn-success mt-3">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

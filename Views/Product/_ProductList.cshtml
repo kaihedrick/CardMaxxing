@@ -1,0 +1,65 @@
+@model IEnumerable<CardMaxxing.Models.ProductModel>
+@using CardMaxxing.Models
+@{
+    var cart = ViewBag.Cart as List<OrderItemsModel> ?? new List<OrderItemsModel>();
+}
+
+@foreach (var product in Model)
+{
+    var cartItem = cart?.FirstOrDefault(ci => ci.ProductID == product.ID);
+    int quantity = cartItem?.Quantity ?? 0;
+
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-lg rounded-4 p-3 text-center bg-light position-relative">
+            <!-- Product Name & Description -->
+            <h5 class="fw-bold">@product.Name</h5>
+            <p class="text-muted">@product.Description</p>
+
+            <!-- Product Image -->
+            <img src="@product.ImageUrl" class="img-fluid rounded shadow-sm" alt="@product.Name"
+                 style="max-height: 120px; object-fit: contain;">
+
+            <!-- Product Price -->
+            <p class="mt-2 fw-bold text-success">$@product.Price.ToString("0.00")</p>
+
+            <!-- Action Controls -->
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="d-grid gap-2 mt-3">
+                    <a href="@Url.Action("EditProduct", "Product", new { id = product.ID })" class="btn btn-outline-primary">
+                        <i class="fas fa-cog"></i> Edit Product
+                    </a>
+                </div>
+            }
+            else if (User.IsInRole("User"))
+            {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <a href="@Url.Action("Details", "Product", new { id = product.ID })" class="btn btn-sm btn-primary">
+                        <i class="fas fa-info-circle"></i> Details
+                    </a>
+                    
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-danger quantity-btn" onclick="updateCart('@product.ID', 'remove')">
+                            <i class="fas fa-minus"></i>
+                        </button>
+
+                        <span id="quantity-@product.ID" class="mx-2 fw-bold">@quantity</span>
+
+                        <button class="btn btn-sm btn-outline-success quantity-btn" onclick="updateCart('@product.ID', 'add')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- For non-logged in users -->
+                <div class="d-grid gap-2 mt-3">
+                    <a href="@Url.Action("Details", "Product", new { id = product.ID })" class="btn btn-primary">
+                        <i class="fas fa-info-circle"></i> View Details
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+}

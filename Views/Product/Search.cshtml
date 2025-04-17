@@ -1,0 +1,57 @@
+@model IEnumerable<CardMaxxing.Models.ProductModel>
+
+@{
+    ViewData["Title"] = "Search Results";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Search Results</h2>
+    
+    <div class="mb-4">
+        <form action="/Product/Search" method="get" class="d-flex justify-content-center">
+            <div class="input-group" style="max-width: 500px;">
+                <input type="text" class="form-control" placeholder="Search products..." name="searchTerm" value="@ViewBag.SearchTerm">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle fa-lg me-2"></i>
+            No products found matching your search. Try different keywords.
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            @foreach (var product in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-lg rounded-4 p-3 text-center bg-light position-relative">
+                        <!-- Product Name & Description -->
+                        <h5 class="fw-bold">@product.Name</h5>
+                        <p class="text-muted">@product.Description</p>
+
+                        <!-- Product Image -->
+                        <img src="@product.ImageUrl" class="img-fluid rounded shadow-sm" alt="@product.Name"
+                             style="max-height: 120px; object-fit: contain;">
+
+                        <!-- Product Price -->
+                        <p class="mt-2 fw-bold text-success">$@product.Price.ToString("0.00")</p>
+
+                        <!-- View Details Button -->
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="@Url.Action("Details", "Product", new { id = product.ID })" class="btn btn-primary">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
