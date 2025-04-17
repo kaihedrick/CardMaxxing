@@ -288,5 +288,67 @@ namespace CardMaxxing.Services
             string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query)).AsList();
         }
+
+        // Retrieves all orders with their details including user name, items, and total price
+        public async Task<List<(OrderModel, string, List<OrderItemsModel>, decimal)>> GetAllOrdersWithDetailsAsync()
+        {
+            try
+            {
+                using var operation = _telemetryClient.StartOperation<RequestTelemetry>("GetAllOrdersWithDetails");
+                
+                // Get all orders
+                string orderQuery = "SELECT * FROM orders ORDER BY CreatedAt DESC;";
+                var orders = (await _db.QueryAsync<OrderModel>(orderQuery)).AsList();
+                
+                // Get all order items with products in a single query
+                string itemsQuery = @"
+                    SELECT oi.ID, oi.OrderID, oi.ProductID, oi.Quantity,
+                           p.ID AS ProductID, p.Name AS Name, p.Price, p.ImageUrl
+                    FROM order_items oi  
+                    JOIN products p ON oi.ProductID = p.ID;";
+                
+                var allItems = (await _db.QueryAsync<OrderItemsModel, ProductModel, OrderItemsModel>(
+                    itemsQuery,
+                    (item, product) =>
+                    {
+                        item.Product = product;
+                        return item;
+                    },
+                    splitOn: "ProductID"
+                )).AsList();
+                
+                // Group items by order ID
+                var itemsByOrder = allItems.GroupBy(i => i.OrderID)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+                
+                // Get all users in a single query
+                string userQuery = "SELECT * FROM users;";
+                var users = (await _db.QueryAsync<UserModel>(userQuery))
+                    .ToDictionary(u => u.ID, u => $"{u.FirstName} {u.LastName}");
+                
+                // Assemble the results
+                var result = new List<(OrderModel, string, List<OrderItemsModel>, decimal)>();
+                foreach (var order in orders)
+                {
+                    var orderItems = itemsByOrder.ContainsKey(order.ID) ? itemsByOrder[order.ID] : new List<OrderItemsModel>();
+                    var userName = users.ContainsKey(order.UserID) ? users[order.UserID] : "Unknown User";
+                    var totalPrice = orderItems.Sum(i => i.Product?.Price * i.Quantity ?? 0);
+                    
+                    result.Add((order, userName, orderItems, totalPrice));
+                }
+                
+                _logger.LogInformation("Retrieved {OrderCount} orders with details", orders.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all orders with details");
+                _telemetryClient.TrackException(ex, new Dictionary<string, string>
+                {
+                    { "Operation", "GetAllOrdersWithDetails" }
+                });
+                throw;
+            }
+        }
     }
 }

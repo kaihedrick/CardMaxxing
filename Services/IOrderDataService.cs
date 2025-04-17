@@ -15,5 +15,6 @@ namespace CardMaxxing.Services
         Task<List<(OrderModel, List<OrderItemsModel>, decimal)>> GetOrdersWithDetailsByUserIDAsync(string userId);
         Task<bool> CreateOrderWithItemsAsync(OrderModel order, List<OrderItemsModel> items);
         Task<decimal> GetOrderTotalAsync(string orderId);
+        Task<List<(OrderModel, string, List<OrderItemsModel>, decimal)>> GetAllOrdersWithDetailsAsync();
     }
 }

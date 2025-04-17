@@ -68,34 +68,25 @@ namespace CardMaxxing.Controllers
             {
                 using var operation = _telemetryClient.StartOperation<RequestTelemetry>("AdminAllOrders");
                 
-                List<OrderModel> allOrders = await _orderService.GetAllOrdersAsync();
-                var ordersWithUsers = new List<(OrderModel, string, List<OrderItemsModel>, decimal)>();
-                decimal totalRevenue = 0;
-
-                foreach (var order in allOrders)
-                {
-                    var user = await _userService.GetUserByIDAsync(order.UserID);
-                    var userName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User";
-                    
-                    var orderItems = await _orderService.GetOrderItemsByOrderIDAsync(order.ID);
-                    var totalPrice = await _orderService.GetOrderTotalAsync(order.ID);
-                    totalRevenue += totalPrice;
-
-                    ordersWithUsers.Add((order, userName, orderItems, totalPrice));
-                }
-
+                // Get all orders with details in a single operation instead of multiple queries
+                var ordersWithDetails = await _orderService.GetAllOrdersWithDetailsAsync();
+                
+                // Calculate total revenue
+                // The fourth item (Item4) in the tuple is the total price
+                decimal totalRevenue = ordersWithDetails.Sum(o => o.Item4);
+                
                 _logger.LogInformation("Retrieved {OrderCount} orders with total revenue ${TotalRevenue}", 
-                    allOrders.Count, totalRevenue);
+                    ordersWithDetails.Count, totalRevenue);
                 
                 _telemetryClient.TrackEvent("AdminOrdersViewed", new Dictionary<string, string>
                 {
                     { "AdminId", adminId ?? "unknown" },
-                    { "OrderCount", allOrders.Count.ToString() },
+                    { "OrderCount", ordersWithDetails.Count.ToString() },
                     { "TotalRevenue", totalRevenue.ToString("F2") },
-                    { "UniqueCustomers", ordersWithUsers.Select(o => o.Item1.UserID).Distinct().Count().ToString() }
+                    { "UniqueCustomers", ordersWithDetails.Select(o => o.Item1.UserID).Distinct().Count().ToString() }
                 });
 
-                return View(ordersWithUsers);
+                return View(ordersWithDetails);
             }
             catch (Exception ex)
             {
