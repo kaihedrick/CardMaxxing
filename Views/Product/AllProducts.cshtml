@@ -43,10 +43,10 @@
                     <!-- Action Controls -->
                     @if (User.IsInRole("Admin"))
                     {
-                        <div class="d-grid gap-2 mt-3">
-                            <a href="@Url.Action("EditProduct", "Product", new { id = product.ID })" class="btn btn-outline-primary" onclick="event.stopPropagation();">
-                                <i class="fas fa-cog"></i> Edit Product
-                            </a>
+                        <div class="edit-product-container">
+                            <button class="edit-product-btn" onclick="event.stopPropagation(); window.location.href='@Url.Action("EditProduct", "Product", new { id = product.ID })'">
+                                <i class="fas fa-cog"></i> <!-- Larger cog icon -->
+                            </button>
                         </div>
                     }
                     else if (User.IsInRole("User"))

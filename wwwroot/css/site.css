@@ -32,7 +32,7 @@ body {
     .card:hover {
         transform: scale(1.01);
         background-color: #121212;
-        transition: 0.3s ease-in-out;
+        transition: 0.1s ease-in-out; /* Reduced duration for a more instant effect */
     }
 
 .btn-dark {
@@ -144,6 +144,56 @@ body {
     margin-top: 0;
     margin-bottom: auto;
     /* ...existing styles... */
+}
+
+/* About page card: no hover grow or color change */
+.about-card {
+    background-color: #1e1e1e;
+    color: white;
+    border: 1px solid #333;
+    transition: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.about-card:hover {
+    background-color: #1e1e1e;
+    color: white;
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Remove shadow from product card images */
+.product-card img {
+    box-shadow: none !important; /* Remove any shadow */
+    border: none; /* Optional: Remove border if present */
+    background: transparent; /* Ensure no background color */
+}
+
+/* Container for positioning the cog button */
+.edit-product-container {
+    position: absolute;
+    bottom: 1rem; /* Align to the bottom */
+    right: 1rem; /* Align to the right */
+}
+
+/* Style for the cog button */
+.edit-product-btn {
+    background: none; /* Remove background */
+    border: none; /* Remove border */
+    padding: 0; /* Remove padding */
+    outline: none; /* Remove outline */
+    box-shadow: none; /* Remove shadow */
+    color: white; /* Make the cog icon white */
+    cursor: pointer; /* Ensure it looks clickable */
+    font-size: 2rem; /* Make the cog icon larger */
+}
+
+.edit-product-btn:hover,
+.edit-product-btn:focus,
+.edit-product-btn:active {
+    outline: none; /* Ensure no outline on hover, focus, or active */
+    box-shadow: none; /* No shadow */
+    color: #ccc; /* Optional: Change color on hover */
 }
 
 

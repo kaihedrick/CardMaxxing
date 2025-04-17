@@ -28,6 +28,19 @@
             </div>
         </div>
 
+        <!-- All Products Button -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-light shadow-sm border-0">
+                <div class="card-body">
+                    <i class="fas fa-th-list fa-3x text-success"></i> <!-- Products Icon -->
+                    <h5 class="card-title mt-3">🛍️ All Products</h5>
+                    <p class="card-text">Browse and manage all products in the store.</p>
+                    <a asp-controller="Product" asp-action="AllProducts" class="btn btn-success">
+                        <i class="fas fa-th-list"></i> View Products
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <!-- Create Products -->
         <div class="col-md-4 mb-4">
@@ -42,12 +55,5 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Logout Button -->
-    <div class="text-center mt-4">
-        <a asp-controller="Admin" asp-action="Logout" class="btn btn-danger btn-lg">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
     </div>
 </div>
