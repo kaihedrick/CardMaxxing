@@ -249,3 +249,6 @@ C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8
 C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.pdb
 C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\CardMaxxing.genruntimeconfig.cache
 C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\ref\CardMaxxing.dll
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\bin\Debug\net8.0\CardMaxxing.staticwebassets.endpoints.json
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\kaihe\OneDrive\Documents\CST-323\CardMaxxing\CardMaxxing\obj\Debug\net8.0\staticwebassets\msbuild.CardMaxxing.Microsoft.AspNetCore.StaticWebAssetEndpoints.props

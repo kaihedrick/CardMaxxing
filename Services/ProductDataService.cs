@@ -11,6 +11,13 @@ using System.Threading.Tasks;
 
 namespace CardMaxxing.Services
 {
+/*** 
+ * @class ProductDataService
+ * @description Service for managing product operations including CRUD, search, and stock control
+ * @param {IDbConnection} db - Database connection injected for executing queries
+ * @param {ILogger<ProductDataService>} logger - Structured logging for diagnostics and traceability
+ * @param {TelemetryClient} telemetryClient - Application Insights client for monitoring telemetry events
+ */
     public class ProductDataService : IProductDataService
     {
         private readonly IDbConnection _db;
@@ -27,7 +34,12 @@ namespace CardMaxxing.Services
             _telemetryClient = telemetryClient;
         }
 
-        // Verifies if a product with the same name already exists in the database
+/***
+ * @method CheckProductDuplicateAsync
+ * @description Checks if a product with the same name already exists
+ * @param {string} name - Name of the product to check
+ * @returns {Task<bool>} - True if duplicate exists, false otherwise
+ */
         public async Task<bool> CheckProductDuplicateAsync(string name)
         {
             _logger.LogInformation("Checking for duplicate product: {ProductName}", name);
@@ -59,7 +71,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Creates a new product in the database with a generated unique identifier
+/***
+ * @method CreateProductAsync
+ * @description Creates a new product with a generated ID and inserts it into the database
+ * @param {ProductModel} product - Product object containing product details
+ * @returns {Task<bool>} - True if creation is successful, false otherwise
+ */
         public async Task<bool> CreateProductAsync(ProductModel product)
         {
             _logger.LogInformation("Creating new product: {ProductName}", product.Name);
@@ -101,7 +118,13 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Removes a product from the database using its unique identifier
+/***
+ * @method DeleteProductAsync
+ * @description Deletes a product from the database by its ID
+ * @param {string} id - Unique identifier of the product
+ * @returns {Task<bool>} - True if deletion is successful, false otherwise
+ */
+
         public async Task<bool> DeleteProductAsync(string id)
         {
             _logger.LogInformation("Deleting product: {ProductId}", id);
@@ -137,7 +160,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Retrieves a single product from the database by its ID
+/***
+ * @method GetProductByIDAsync
+ * @description Retrieves a product's full details by its ID
+ * @param {string} id - Unique identifier of the product
+ * @returns {Task<ProductModel>} - Product model object if found, null otherwise
+ */
         public async Task<ProductModel> GetProductByIDAsync(string id)
         {
             _logger.LogInformation("Retrieving product: {ProductId}", id);
@@ -177,7 +205,11 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Retrieves all products from the database
+/***
+ * @method GetAllProductsAsync
+ * @description Retrieves all products from the database
+ * @returns {Task<List<ProductModel>>} - List of all products
+ */
         public async Task<List<ProductModel>> GetAllProductsAsync()
         {
             _logger.LogInformation("Retrieving all products");
@@ -207,7 +239,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Updates an existing product's information in the database
+/***
+ * @method EditProductAsync
+ * @description Updates an existing product's details in the database
+ * @param {ProductModel} product - Updated product object
+ * @returns {Task<bool>} - True if update is successful, false otherwise
+ */
         public async Task<bool> EditProductAsync(ProductModel product)
         {
             _logger.LogInformation("Updating product: {ProductId} - {ProductName}", product.ID, product.Name);
@@ -255,7 +292,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Searches for products by name or manufacturer using partial matching
+/***
+ * @method SearchProductsAsync
+ * @description Searches for products by partial match on name or manufacturer
+ * @param {string} searchTerm - Search term string
+ * @returns {Task<List<ProductModel>>} - List of matching products
+ */
         public async Task<List<ProductModel>> SearchProductsAsync(string searchTerm)
         {
             _logger.LogInformation("Searching products with term: {SearchTerm}", searchTerm);
@@ -290,7 +332,13 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Reduces the available quantity of a product in inventory
+/***
+ * @method DecreaseStockAsync
+ * @description Reduces the stock quantity of a product if sufficient stock is available
+ * @param {string} productId - Unique identifier of the product
+ * @param {int} quantity - Quantity to reduce
+ * @returns {Task<bool>} - True if stock reduced successfully, false otherwise
+ */
         public async Task<bool> DecreaseStockAsync(string productId, int quantity)
         {
             _logger.LogInformation("Decreasing stock for product {ProductId} by {Quantity}", productId, quantity);

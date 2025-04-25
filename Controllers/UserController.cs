@@ -14,6 +14,10 @@ using Microsoft.ApplicationInsights.DataContracts;
 
 namespace CardMaxxing.Controllers
 {
+    /*** 
+ * @class UserController
+ * @description Manages user authentication, registration, dashboard, shopping cart, checkout, and order history.
+ */
     public class UserController : Controller
     {
         private readonly IUserDataService _userService;
@@ -23,6 +27,16 @@ namespace CardMaxxing.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly TelemetryClient _telemetryClient;
 
+/***
+ * @constructor UserController
+ * @description Initializes a new instance of the UserController with required services.
+ * @param {IUserDataService} userService - Service for user account management.
+ * @param {IOrderDataService} orderService - Service for order and checkout management.
+ * @param {ICartDataService} cartService - Service for cart data handling.
+ * @param {IProductDataService} productService - Service for product retrieval.
+ * @param {ILogger<UserController>} logger - Logger instance for application telemetry.
+ * @param {TelemetryClient} telemetryClient - Application Insights telemetry client.
+ */
         public UserController(
             IUserDataService userService, 
             IOrderDataService orderService, 
@@ -39,7 +53,11 @@ namespace CardMaxxing.Controllers
             _telemetryClient = telemetryClient;
         }
 
-        // Render the registration form.
+/***
+ * @method Register
+ * @description Displays the user registration form view.
+ * @returns {IActionResult} - Registration view.
+ */
         public IActionResult Register()
         {
             _logger.LogInformation("User accessing registration page");
@@ -59,8 +77,13 @@ namespace CardMaxxing.Controllers
                 throw;
             }
         }
+/***
+ * @method Register (POST)
+ * @description Processes user registration form submission.
+ * @param {UserModel} user - New user data for account creation.
+ * @returns {Task<IActionResult>} - Redirects on success or returns view with errors.
+ */
 
-        // Process registration form submission.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(UserModel user)
@@ -117,7 +140,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Render the login form.
+/***
+ * @method Login
+ * @description Displays the user login form view.
+ * @returns {IActionResult} - Login view.
+ */
         public IActionResult Login()
         {
             _logger.LogInformation("User accessing login page");
@@ -138,7 +165,13 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Process login and set up authentication.
+
+/***
+ * @method Login (POST)
+ * @description Authenticates user credentials and sets authentication cookies.
+ * @param {LoginModel} credentials - User login credentials.
+ * @returns {Task<IActionResult>} - Redirects on successful login or returns view with errors.
+ */
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginModel credentials)
@@ -208,7 +241,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Show the user's dashboard.
+/***
+ * @method Dashboard
+ * @description Displays the authenticated user's dashboard with profile information.
+ * @returns {Task<IActionResult>} - Dashboard view.
+ */
         [Authorize]
         public async Task<IActionResult> Dashboard()
         {
@@ -255,8 +292,11 @@ namespace CardMaxxing.Controllers
                 throw;
             }
         }
-
-        // Display the user's order history.
+/***
+ * @method OrderHistory
+ * @description Displays authenticated user's order history with order details.
+ * @returns {Task<IActionResult>} - Order history view.
+ */
         [Authorize]
         public async Task<IActionResult> OrderHistory()
         {
@@ -299,7 +339,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Display the shopping cart with product details.
+/***
+ * @method ShoppingCart
+ * @description Displays the user's current shopping cart contents.
+ * @returns {Task<IActionResult>} - Shopping cart view.
+ */
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> ShoppingCart()
@@ -346,7 +390,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Update the shopping cart by adding or removing a product.
+/***
+ * @method UpdateCart
+ * @description Updates the quantity of a product in the user's shopping cart.
+ * @param {Dictionary<string, string>} request - Contains productId and action (add/remove).
+ * @returns {IActionResult} - Updated cart item quantity as JSON.
+ */
         [HttpPost]
         [Authorize]
         public IActionResult UpdateCart([FromBody] Dictionary<string, string> request)
@@ -447,7 +496,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Add a product to the shopping cart.
+/***
+ * @method AddToCart
+ * @description Adds a product to the shopping cart or increases quantity if already added.
+ * @param {Dictionary<string, string>} request - Contains productId to add.
+ * @returns {IActionResult} - Updated cart item quantity as JSON.
+ */
         [HttpPost]
         [Authorize]
         public IActionResult AddToCart([FromBody] Dictionary<string, string> request)
@@ -518,7 +572,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Retrieve the shopping cart from the session.
+/***
+ * @method GetCartFromSession
+ * @description Retrieves the shopping cart from the current session.
+ * @returns {List<OrderItemsModel>} - Current cart items.
+ */
         private List<OrderItemsModel> GetCartFromSession()
         {
             var cartJson = HttpContext.Session.GetString("Cart");
@@ -529,13 +587,23 @@ namespace CardMaxxing.Controllers
             return JsonSerializer.Deserialize<List<OrderItemsModel>>(cartJson) ?? new List<OrderItemsModel>();
         }
 
-        // Save the shopping cart to the session.
+/***
+ * @method SaveCartToSession
+ * @description Saves the updated shopping cart into the session.
+ * @param {List<OrderItemsModel>} cart - Updated cart contents.
+ */
         private void SaveCartToSession(List<OrderItemsModel> cart)
         {
             HttpContext.Session.SetString("Cart", JsonSerializer.Serialize(cart));
         }
 
-        // Remove or decrement a product from the shopping cart.
+/***
+ * @method RemoveFromCart
+ * @description Removes or decrements a product quantity from the shopping cart.
+ * @param {string} productId - ID of the product to remove.
+ * @returns {IActionResult} - Redirects to the shopping cart view.
+ */
+
         [HttpPost]
         [Authorize]
         public IActionResult RemoveFromCart(string productId)
@@ -589,7 +657,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Clear all items from the shopping cart.
+
+/***
+ * @method ClearCart
+ * @description Clears all items from the user's shopping cart.
+ * @returns {IActionResult} - Redirects to the shopping cart view.
+ */
         [HttpPost]
         [Authorize]
         public IActionResult ClearCart()
@@ -628,7 +701,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Prepare the checkout view with order details.
+/***
+ * @method Checkout
+ * @description Prepares the checkout page displaying order summary and total.
+ * @returns {Task<IActionResult>} - Checkout view.
+ */
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Checkout()
@@ -687,7 +764,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Confirm the order and clear the shopping cart.
+/***
+ * @method ConfirmOrder
+ * @description Processes the confirmed order by creating it and clearing the cart.
+ * @returns {Task<IActionResult>} - Redirects to order history view.
+ */
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> ConfirmOrder()
@@ -763,7 +844,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Log out the current user.
+/***
+ * @method Logout
+ * @description Signs the user out and clears authentication cookies.
+ * @returns {Task<IActionResult>} - Redirects to login view.
+ */
         public async Task<IActionResult> Logout()
         {
             string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -5,9 +5,11 @@
 }
 
 <div class="container mt-5">
+    <!-- Page Header -->
     <h2 class="text-center fw-bold text-white">📦 All Orders</h2>
     <p class="text-center text-light">View all customer orders.</p>
 
+    <!-- No Orders Found Section -->
     @if (Model.Count == 0)
     {
         <div class="alert alert-info text-center">
@@ -16,15 +18,18 @@
     }
     else
     {
+        <!-- Orders List Section -->
         @foreach (var (order, userName, items, total) in Model)
         {
             <div class="card mb-4 shadow">
+                <!-- Order Header -->
                 <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">🛒 Order #@order.ID</h5>
                     <p class="mb-0"><strong>User:</strong> @userName</p>
                     <p class="mb-0"><strong>Date:</strong> @order.CreatedAt.ToString("f")</p>
                 </div>
 
+                <!-- Order Items Table -->
                 <div class="card-body bg-dark">
                     <table class="table table-striped">
                         <thead class="table-dark">
@@ -53,6 +58,7 @@
                     </table>
                 </div>
 
+                <!-- Order Footer -->
                 <div class="card-footer text-end bg-dark text-white">
                     <h5 class="fw-bold">Total: $@total.ToString("0.00")</h5>
                 </div>

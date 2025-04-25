@@ -8,12 +8,24 @@ using Microsoft.ApplicationInsights.DataContracts;
 using System.Security.Claims;
 namespace CardMaxxing.Controllers
 {
+    /***
+ * @class ProductController
+ * @description Manages product listing, details, creation, editing, deletion, and searching.
+ */
     [Authorize]
     public class ProductController : Controller
     {
         private readonly IProductDataService _productService;
         private readonly ILogger<ProductController> _logger;
         private readonly TelemetryClient _telemetryClient;
+
+/***
+ * @constructor ProductController
+ * @description Initializes a new instance of ProductController with required services.
+ * @param {IProductDataService} productService - Service for product management.
+ * @param {ILogger<ProductController>} logger - Logger instance for telemetry.
+ * @param {TelemetryClient} telemetryClient - Application Insights telemetry client.
+ */
 
         public ProductController(
             IProductDataService productService,
@@ -25,7 +37,12 @@ namespace CardMaxxing.Controllers
             _telemetryClient = telemetryClient;
         }
 
-        // Display all products with the user's cart.
+/***
+ * @method AllProducts
+ * @description Displays all available products along with user's cart information.
+ * @returns {Task<IActionResult>} - View of all products.
+ */
+
         public async Task<IActionResult> AllProducts()
         {
             _logger.LogInformation("Fetching all products");
@@ -61,7 +78,13 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Display details for a specific product.
+
+/***
+ * @method Details
+ * @description Displays detailed information for a specific product.
+ * @param {string} id - Product ID.
+ * @returns {Task<IActionResult>} - Product detail view.
+ */
         public async Task<IActionResult> Details(string id)
         {
             _logger.LogInformation("Viewing details for product {ProductId}", id);
@@ -101,7 +124,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Render the form to create a new product.
+/***
+ * @method CreateProduct
+ * @description Displays the form to create a new product (Admin only).
+ * @returns {IActionResult} - Create product form view.
+ */
+
         [Authorize(Roles = "Admin")]
         public IActionResult CreateProduct()
         {
@@ -129,7 +157,13 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Process the creation of a new product.
+/***
+ * @method Create
+ * @description Processes the form submission to create a new product (Admin only).
+ * @param {ProductModel} product - Product details to create.
+ * @returns {Task<IActionResult>} - Redirects or reloads form on error.
+ */
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -188,7 +222,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Render the form to edit an existing product.
+/***
+ * @method Edit
+ * @description Displays the edit form for an existing product (Admin only).
+ * @param {string} id - Product ID.
+ * @returns {Task<IActionResult>} - Edit product form view.
+ */
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(string id)
         {
@@ -230,7 +269,13 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Process the editing of an existing product.
+/***
+ * @method Edit (POST)
+ * @description Processes the edit form submission for an existing product (Admin only).
+ * @param {string} id - Product ID.
+ * @param {ProductModel} product - Updated product data.
+ * @returns {Task<IActionResult>} - Redirects or reloads form on error.
+ */
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
@@ -303,7 +348,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Delete a product.
+/***
+ * @method Delete
+ * @description Deletes a product from the system (Admin only).
+ * @param {string} id - Product ID.
+ * @returns {Task<IActionResult>} - Redirects to product list.
+ */
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -360,7 +410,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Search for products by name or manufacturer.
+/***
+ * @method Search
+ * @description Searches products by name or manufacturer.
+ * @param {string} searchTerm - Search keyword.
+ * @returns {Task<IActionResult>} - View of search results.
+ */
         public async Task<IActionResult> Search(string searchTerm)
         {
             _logger.LogInformation("User searching for products with term: {SearchTerm}", searchTerm);
@@ -395,7 +450,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Handles AJAX search requests and returns partial HTML
+/***
+ * @method SearchPartial
+ * @description Handles AJAX product search and returns partial HTML content.
+ * @param {string} searchTerm - Search keyword.
+ * @returns {Task<IActionResult>} - Partial view for search results.
+ */
         public async Task<IActionResult> SearchPartial(string searchTerm)
         {
             _logger.LogInformation("User performing AJAX search with term: {SearchTerm}", searchTerm);
@@ -440,7 +500,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Render the admin edit form for a product.
+/***
+ * @method EditProduct
+ * @description Displays the admin edit form for a product.
+ * @param {string} id - Product ID.
+ * @returns {Task<IActionResult>} - Admin edit form view.
+ */
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EditProduct(string id)
         {
@@ -482,7 +547,13 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Process the admin edit form submission.
+/***
+ * @method EditProduct (POST)
+ * @description Processes the admin edit form submission to update a product.
+ * @param {string} id - Product ID.
+ * @param {ProductModel} product - Updated product data.
+ * @returns {Task<IActionResult>} - Redirects to product list or reloads form on error.
+ */
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]

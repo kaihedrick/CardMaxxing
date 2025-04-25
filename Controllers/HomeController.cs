@@ -10,13 +10,24 @@ using System.Security.Claims;
 
 namespace CardMaxxing.Controllers
 {
+    /***
+ * @class HomeController
+ * @description Handles core page routing such as home, privacy, error, and user dashboard.
+ */
+
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IProductDataService _productService;
         private readonly TelemetryClient _telemetryClient;
 
-        // Initialize logger, product service, and telemetry client.
+/***
+ * @constructor HomeController
+ * @description Initializes HomeController with logging, product service, and telemetry.
+ * @param {ILogger<HomeController>} logger - Logger instance for the controller.
+ * @param {IProductDataService} productService - Service for retrieving product data.
+ * @param {TelemetryClient} telemetryClient - Application Insights telemetry client.
+ */
         public HomeController(
             ILogger<HomeController> logger, 
             IProductDataService productService,
@@ -27,7 +38,12 @@ namespace CardMaxxing.Controllers
             _telemetryClient = telemetryClient;
         }
 
-        // Display featured GPUs and the user's cart.
+
+/***
+ * @method Index
+ * @description Displays the home page with featured products and cart summary.
+ * @returns {Task<IActionResult>} - Returns the home page view.
+ */
         public async Task<IActionResult> Index()
         {
             _logger.LogInformation("User accessing home page");
@@ -72,7 +88,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Show the privacy policy page.
+/***
+ * @method Privacy
+ * @description Displays the privacy policy page.
+ * @returns {IActionResult} - Returns the privacy policy view.
+ */
         public IActionResult Privacy()
         {
             _logger.LogInformation("User accessing privacy page");
@@ -98,7 +118,12 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Show dashboard for logged-in users.
+
+/***
+ * @method Dashboard
+ * @description Displays the dashboard page for authenticated users.
+ * @returns {IActionResult} - Returns the user dashboard view.
+ */
         [Authorize]
         public IActionResult Dashboard()
         {
@@ -128,7 +153,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Display error details without caching.
+/***
+ * @method Error
+ * @description Displays error page details when unhandled exceptions occur.
+ * @returns {IActionResult} - Returns the error page view with request information.
+ */
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
@@ -163,7 +192,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Show the About page.
+/***
+ * @method About
+ * @description Displays the About page describing the application or organization.
+ * @returns {IActionResult} - Returns the About page view.
+ */
         public IActionResult About()
         {
             _logger.LogInformation("User accessing About page");

@@ -46,15 +46,3 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
-
-.logout-link {
-    color: white; /* Default text color */
-}
-
-.logout-link i {
-    color: red; /* Red icon color */
-}
-
-.logout-link:hover {
-    color: red; /* Red text color on hover */
-}

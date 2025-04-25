@@ -11,12 +11,18 @@ using System.Threading.Tasks;
 
 namespace CardMaxxing.Services
 {
+    /*** 
+    * @class UserDataService
+    * @description Service for user account management, role management, and authentication
+    * @param {IDbConnection} db - Database connection injected via dependency injection
+    * @param {ILogger<UserDataService>} logger - Logger for structured application logging
+    * @param {TelemetryClient} telemetryClient - Application Insights telemetry client for tracing
+    */
     public class UserDataService : IUserDataService
     {
         private readonly IDbConnection _db;
         private readonly ILogger<UserDataService> _logger;
         private readonly TelemetryClient _telemetryClient;
-
         public UserDataService(
             IDbConnection db,
             ILogger<UserDataService> logger,
@@ -27,7 +33,12 @@ namespace CardMaxxing.Services
             _telemetryClient = telemetryClient;
         }
 
-        // Checks if an email address is already registered in the system
+        /***
+        * @method CheckEmailDuplicateAsync
+        * @description Checks if a user email already exists in the system to prevent duplicate accounts
+        * @param {string} email - Email address to check for duplication
+        * @returns {Task<bool>} - True if duplicate found, false otherwise
+        */
         public async Task<bool> CheckEmailDuplicateAsync(string email)
         {
             _logger.LogInformation("Checking for duplicate email: {Email}", email);
@@ -59,7 +70,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Creates a new user account with hashed password and default role
+        /***
+        * @method CreateUserAsync
+        * @description Creates a new user with hashed password and stores it in the database
+        * @param {UserModel} user - User object containing account details
+        * @returns {Task<bool>} - True if creation is successful, false otherwise
+        */
         public async Task<bool> CreateUserAsync(UserModel user)
         {
             _logger.LogInformation("Creating new user: {Username}", user.Username);
@@ -101,7 +117,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Permanently removes a user account from the system by ID
+        /***
+        * @method DeleteUserAsync
+        * @description Deletes a user account by ID from the database
+        * @param {string} id - Unique user ID
+        * @returns {Task<bool>} - True if deletion is successful, false otherwise
+        */
         public async Task<bool> DeleteUserAsync(string id)
         {
             _logger.LogInformation("Deleting user with ID: {UserID}", id);
@@ -137,7 +158,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Updates an existing user's profile information and settings
+        /***
+        * @method EditUserAsync
+        * @description Edits an existing user account's information, including password and role
+        * @param {UserModel} user - Updated user object
+        * @returns {Task<bool>} - True if update is successful, false otherwise
+        */
         public async Task<bool> EditUserAsync(UserModel user)
         {
             _logger.LogInformation("Editing user: {Username}", user.Username);
@@ -179,7 +205,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Retrieves a user's complete profile by their unique identifier
+        /***
+        * @method GetUserByIDAsync
+        * @description Retrieves full user information by user ID
+        * @param {string} id - Unique user ID
+        * @returns {Task<UserModel>} - UserModel object if found, null otherwise
+        */
         public async Task<UserModel> GetUserByIDAsync(string id)
         {
             _logger.LogInformation("Retrieving user by ID: {UserID}", id);
@@ -217,7 +248,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Finds a user's profile information by their username
+        /***
+        * @method GetUserByUsernameAsync
+        * @description Retrieves full user information by username
+        * @param {string} username - User's unique username
+        * @returns {Task<UserModel>} - UserModel object if found, null otherwise
+        */
         public async Task<UserModel> GetUserByUsernameAsync(string username)
         {
             _logger.LogInformation("Retrieving user by username: {Username}", username);
@@ -255,7 +291,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Retrieves the hashed password for a specific username during authentication
+        /***
+        * @method GetHashedPasswordAsync
+        * @description Fetches the hashed password associated with a username
+        * @param {string} username - Username to retrieve password for
+        * @returns {Task<string>} - Hashed password string
+        */
         public async Task<string> GetHashedPasswordAsync(string username)
         {
             _logger.LogInformation("Retrieving hashed password for username: {Username}", username);
@@ -293,7 +334,12 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Gets the assigned role (User/Admin) for a specific username
+        /***
+        * @method GetUserRoleAsync
+        * @description Fetches the user role (Admin or User) by username
+        * @param {string} username - Username to retrieve role for
+        * @returns {Task<string>} - Role string (e.g., Admin, User)
+        */
         public async Task<string> GetUserRoleAsync(string username)
         {
             _logger.LogInformation("Retrieving role for username: {Username}", username);
@@ -332,7 +378,13 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Authenticates a user by verifying their username and password combination
+        /***
+        * @method VerifyAccountAsync
+        * @description Verifies if the input password matches the stored hashed password
+        * @param {string} username - Username for login
+        * @param {string} password - Plain-text password for comparison
+        * @returns {Task<bool>} - True if password matches, false otherwise
+        */
         public async Task<bool> VerifyAccountAsync(string username, string password)
         {
             _logger.LogInformation("Verifying account for username: {Username}", username);
@@ -368,8 +420,11 @@ namespace CardMaxxing.Services
                 return false;
             }
         }
-
-        // Retrieves a list of all registered users in the system
+        /***
+        * @method GetAllUsersAsync
+        * @description Retrieves a list of all registered users
+        * @returns {Task<List<UserModel>>} - List of user models
+        */
         public async Task<List<UserModel>> GetAllUsersAsync()
         {
             _logger.LogInformation("Retrieving all users");
@@ -396,7 +451,13 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Updates a user's role between Admin and User permissions
+        /***
+        * @method UpdateUserRoleAsync
+        * @description Updates the role (Admin/User) of an existing user
+        * @param {string} userId - Unique user ID
+        * @param {string} newRole - New role to assign (Admin or User)
+        * @returns {Task<bool>} - True if update is successful, false otherwise
+        */
         public async Task<bool> UpdateUserRoleAsync(string userId, string newRole)
         {
             _logger.LogInformation("Updating role for user ID: {UserID} to {NewRole}", userId, newRole);

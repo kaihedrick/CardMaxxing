@@ -1,0 +1,1 @@
+//"DefaultConnection": "server=cardmaxxing-db.mysql.database.azure.com;database=cardmaxxing;user=adminuser;password=StrongPassword123!;"

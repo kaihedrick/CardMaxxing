@@ -8,6 +8,10 @@ using System.Security.Claims;
 
 namespace CardMaxxing.Controllers
 {
+    /***
+ * @class AdminController
+ * @description Handles administrative actions including dashboard access and viewing all orders.
+ */
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
@@ -16,7 +20,14 @@ namespace CardMaxxing.Controllers
         private readonly ILogger<AdminController> _logger;
         private readonly TelemetryClient _telemetryClient;
 
-        // Initializes a new instance of the AdminController with required dependencies
+/***
+ * @constructor AdminController
+ * @description Initializes AdminController with services for user management, order management, logging, and telemetry.
+ * @param {IUserDataService} userService - Service for user-related data operations.
+ * @param {IOrderDataService} orderService - Service for order-related data operations.
+ * @param {ILogger<AdminController>} logger - Logger instance for diagnostic and operational logging.
+ * @param {TelemetryClient} telemetryClient - Application Insights telemetry client for monitoring and logging.
+ */
         public AdminController(
             IUserDataService userService, 
             IOrderDataService orderService,
@@ -29,7 +40,11 @@ namespace CardMaxxing.Controllers
             _telemetryClient = telemetryClient;
         }
 
-        // Displays the main admin dashboard view with overview metrics
+/***
+ * @method AdminDashboard
+ * @description Displays the main administrative dashboard with basic analytics and operational access.
+ * @returns {IActionResult} - Returns the AdminDashboard view.
+ */
         public IActionResult AdminDashboard()
         {
             string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -58,7 +73,11 @@ namespace CardMaxxing.Controllers
             }
         }
 
-        // Retrieves and displays all orders in the system with user details and totals
+/***
+ * @method AllOrders
+ * @description Retrieves and displays all orders with related user details and calculates total revenue metrics.
+ * @returns {Task<IActionResult>} - Returns the AllOrders view populated with detailed order information.
+ */
         public async Task<IActionResult> AllOrders()
         {
             string? adminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

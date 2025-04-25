@@ -12,6 +12,13 @@ using System.Linq;
 
 namespace CardMaxxing.Services
 {
+/*** 
+ * @class OrderDataService
+ * @description Service class responsible for managing order-related operations including creation, retrieval, and deletion.
+ * @param {IDbConnection} db - Database connection for executing queries
+ * @param {ILogger<OrderDataService>} logger - Logger instance for structured logging
+ * @param {TelemetryClient} telemetryClient - Application Insights client for telemetry tracking
+ */
     public class OrderDataService : IOrderDataService
     {
         private readonly IDbConnection _db;
@@ -28,7 +35,12 @@ namespace CardMaxxing.Services
             _telemetryClient = telemetryClient;
         }
 
-        // Creates a basic order record without items
+/***
+ * @method CreateOrderAsync
+ * @description Creates a new order without order items
+ * @param {OrderModel} order - Order object containing user ID and creation time
+ * @returns {Task<bool>} - True if creation succeeds, false otherwise
+ */
         public async Task<bool> CreateOrderAsync(OrderModel order)
         {
             _logger.LogInformation("Creating new order for user {UserId}", order.UserID);
@@ -68,7 +80,13 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Creates an order with multiple items and handles inventory updates in a transaction
+/***
+ * @method CreateOrderWithItemsAsync
+ * @description Creates an order and its associated items within a database transaction, ensuring stock is decremented
+ * @param {OrderModel} order - Order header data
+ * @param {List<OrderItemsModel>} items - List of order item entries
+ * @returns {Task<bool>} - True if both order and items creation succeed, false otherwise
+ */
         public async Task<bool> CreateOrderWithItemsAsync(OrderModel order, List<OrderItemsModel> items)
         {
             _logger.LogInformation("Creating order {OrderId} with {ItemCount} items for user {UserId}", 
@@ -174,7 +192,14 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Removes an order and its associated items from the database
+
+/***
+ * @method DeleteOrderAsync
+ * @description Deletes an order from the database by its ID
+ * @param {string} id - Unique identifier of the order
+ * @returns {Task<bool>} - True if deletion is successful, false otherwise
+ */
+
         public async Task<bool> DeleteOrderAsync(string id)
         {
             _logger.LogInformation("Deleting order {OrderId}", id);
@@ -210,21 +235,39 @@ namespace CardMaxxing.Services
             }
         }
 
-        // Retrieves a single order by its unique identifier
+
+/***
+ * @method GetOrderByIDAsync
+ * @description Retrieves a specific order by its unique identifier
+ * @param {string} id - Unique identifier of the order
+ * @returns {Task<OrderModel>} - Order object if found, otherwise null
+ */
         public async Task<OrderModel> GetOrderByIDAsync(string id)
         {
             string query = "SELECT * FROM orders WHERE ID = @ID;";
             return await _db.QueryFirstOrDefaultAsync<OrderModel>(query, new { ID = id });
         }
 
-        // Gets all orders for a specific user sorted by creation date
+/***
+ * @method GetOrderItemsByOrderIDAsync
+ * @description Retrieves all items for a specific order, including associated product details
+ * @param {string} orderId - Unique identifier of the order
+ * @returns {Task<List<OrderItemsModel>>} - List of order items
+ */
+
         public async Task<List<OrderModel>> GetOrdersByUserIDAsync(string userId)
         {
             string query = "SELECT * FROM orders WHERE UserID = @UserID ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query, new { UserID = userId })).AsList();
         }
 
-        // Retrieves all items in an order with their associated product details
+/***
+ * @method GetOrdersWithDetailsByUserIDAsync
+ * @description Retrieves all orders with their items and total amounts for a specific user
+ * @param {string} userId - Unique identifier of the user
+ * @returns {Task<List<(OrderModel, List<OrderItemsModel>, decimal)>>} - List of tuples containing order, items, and totals
+ */
+
         public async Task<List<OrderItemsModel>> GetOrderItemsByOrderIDAsync(string orderId)
         {
             string query = @"
@@ -254,7 +297,12 @@ namespace CardMaxxing.Services
             return orderItems.AsList();
         }
 
-        // Gets complete order details including items and totals for a user
+/***
+ * @method GetOrdersByUserIDAsync
+ * @description Retrieves all orders associated with a specific user ID
+ * @param {string} userId - Unique identifier of the user
+ * @returns {Task<List<OrderModel>>} - List of user orders
+ */
         public async Task<List<(OrderModel, List<OrderItemsModel>, decimal)>> GetOrdersWithDetailsByUserIDAsync(string userId)
         {
             var orders = await GetOrdersByUserIDAsync(userId);
@@ -270,7 +318,12 @@ namespace CardMaxxing.Services
             return orderDetails;
         }
 
-        // Calculates the total price of all items in an order
+/***
+ * @method GetOrderTotalAsync
+ * @description Calculates the total price of all items for a given order
+ * @param {string} orderId - Unique identifier of the order
+ * @returns {Task<decimal>} - Total price of the order
+ */
         public async Task<decimal> GetOrderTotalAsync(string orderId)
         {
             string query = @"
@@ -282,14 +335,22 @@ namespace CardMaxxing.Services
             return await _db.ExecuteScalarAsync<decimal>(query, new { OrderID = orderId });
         }
 
-        // Retrieves all orders in the system sorted by creation date
+/***
+ * @method GetAllOrdersAsync
+ * @description Retrieves all orders in the system sorted by creation date
+ * @returns {Task<List<OrderModel>>} - List of all orders
+ */
         public async Task<List<OrderModel>> GetAllOrdersAsync()
         {
             string query = "SELECT * FROM orders ORDER BY CreatedAt DESC;";
             return (await _db.QueryAsync<OrderModel>(query)).AsList();
         }
 
-        // Retrieves all orders with their details including user name, items, and total price
+/***
+ * @method GetAllOrdersWithDetailsAsync
+ * @description Retrieves all orders along with user names, items, and total prices
+ * @returns {Task<List<(OrderModel, string, List<OrderItemsModel>, decimal)>>} - List of full order details
+ */
         public async Task<List<(OrderModel, string, List<OrderItemsModel>, decimal)>> GetAllOrdersWithDetailsAsync()
         {
             try
